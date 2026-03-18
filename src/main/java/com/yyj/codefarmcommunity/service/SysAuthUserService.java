@@ -2,6 +2,7 @@ package com.yyj.codefarmcommunity.service;
 
 import com.yyj.codefarmcommunity.entity.SysAuthUser;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.yyj.codefarmcommunity.vo.RegisterRequest;
 
 /**
 * @author 闫寅杰
@@ -10,4 +11,12 @@ import com.baomidou.mybatisplus.extension.service.IService;
 */
 public interface SysAuthUserService extends IService<SysAuthUser> {
 
+    /**
+     * 用户注册
+     * @param registerRequest 注册请求
+     * @return 注册后的用户信息
+     */
+    SysAuthUser register(RegisterRequest registerRequest);
+
 }
+

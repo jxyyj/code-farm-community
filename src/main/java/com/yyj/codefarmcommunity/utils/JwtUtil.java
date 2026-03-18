@@ -93,6 +93,26 @@ public class JwtUtil {
     }
     
     /**
+     * 从 token 中获取角色
+     * @param token token
+     * @return 角色列表
+     */
+    public static java.util.List<String> getRolesFromToken(String token) {
+        Claims claims = parseToken(token);
+        return (java.util.List<String>) claims.get("roles");
+    }
+    
+    /**
+     * 从 token 中获取权限
+     * @param token token
+     * @return 权限列表
+     */
+    public static java.util.List<String> getPermissionsFromToken(String token) {
+        Claims claims = parseToken(token);
+        return (java.util.List<String>) claims.get("permissions");
+    }
+    
+    /**
      * 验证 token 是否过期
      * @param token token
      * @return 是否过期

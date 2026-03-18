@@ -142,4 +142,78 @@ CREATE TABLE `sys_auth_user_role`
   COLLATE = utf8mb4_unicode_ci COMMENT = '用户角色表'
   ROW_FORMAT = Dynamic;
 
+-- ----------------------------
+-- 基础角色数据
+-- ----------------------------
+INSERT INTO `sys_auth_role` (`role_name`, `role_key`, `created_by`, `created_time`, `is_deleted`)
+VALUES
+('管理员', 'ADMIN', 'system', NOW(), 0),
+('普通用户', 'USER', 'system', NOW(), 0);
+
+-- ----------------------------
+-- 基础权限数据
+-- ----------------------------
+INSERT INTO `sys_auth_permission` (`name`, `parent_id`, `order_num`, `type`, `menu_url`, `component`, `status`, `show`, `icon`, `permission_key`, `created_by`, `created_time`, `is_deleted`)
+VALUES
+-- 系统管理
+('系统管理', 0, 1, 0, '/system', 'system/index', 0, 0, 'system', 'system:manage', 'system', NOW(), 0),
+-- 用户管理
+('用户管理', 1, 1, 0, '/system/user', 'system/user/index', 0, 0, 'user', 'system:user:manage', 'system', NOW(), 0),
+('用户列表', 2, 1, 1, '', '', 0, 0, '', 'system:user:list', 'system', NOW(), 0),
+('用户添加', 2, 2, 1, '', '', 0, 0, '', 'system:user:add', 'system', NOW(), 0),
+('用户编辑', 2, 3, 1, '', '', 0, 0, '', 'system:user:edit', 'system', NOW(), 0),
+('用户删除', 2, 4, 1, '', '', 0, 0, '', 'system:user:delete', 'system', NOW(), 0),
+-- 角色管理
+('角色管理', 1, 2, 0, '/system/role', 'system/role/index', 0, 0, 'role', 'system:role:manage', 'system', NOW(), 0),
+('角色列表', 7, 1, 1, '', '', 0, 0, '', 'system:role:list', 'system', NOW(), 0),
+('角色添加', 7, 2, 1, '', '', 0, 0, '', 'system:role:add', 'system', NOW(), 0),
+('角色编辑', 7, 3, 1, '', '', 0, 0, '', 'system:role:edit', 'system', NOW(), 0),
+('角色删除', 7, 4, 1, '', '', 0, 0, '', 'system:role:delete', 'system', NOW(), 0),
+-- 权限管理
+('权限管理', 1, 3, 0, '/system/permission', 'system/permission/index', 0, 0, 'permission', 'system:permission:manage', 'system', NOW(), 0),
+('权限列表', 12, 1, 1, '', '', 0, 0, '', 'system:permission:list', 'system', NOW(), 0),
+('权限添加', 12, 2, 1, '', '', 0, 0, '', 'system:permission:add', 'system', NOW(), 0),
+('权限编辑', 12, 3, 1, '', '', 0, 0, '', 'system:permission:edit', 'system', NOW(), 0),
+('权限删除', 12, 4, 1, '', '', 0, 0, '', 'system:permission:delete', 'system', NOW(), 0);
+
+-- ----------------------------
+-- 角色权限关联数据
+-- ----------------------------
+-- 管理员角色拥有所有权限
+INSERT INTO `sys_auth_role_permission` (`role_id`, `permission_id`, `created_by`, `created_time`, `is_deleted`)
+SELECT 1, id, 'system', NOW(), 0 FROM `sys_auth_permission`;
+
+-- 普通用户角色拥有基础权限
+INSERT INTO `sys_auth_role_permission` (`role_id`, `permission_id`, `created_by`, `created_time`, `is_deleted`)
+VALUES
+(2, 1, 'system', NOW(), 0), -- 系统管理
+(2, 2, 'system', NOW(), 0), -- 用户管理
+(2, 3, 'system', NOW(), 0); -- 用户列表
+
+-- ----------------------------
+-- 基础用户数据
+-- ----------------------------
+-- 管理员用户 (密码: admin123)
+INSERT INTO `sys_auth_user` (`user_name`, `nick_name`, `email`, `phone`, `password`, `status`, `created_by`, `created_time`, `is_deleted`)
+VALUES
+('admin', '管理员', 'admin@codefarm.com', '13800138000', '$2a$10$E6zqOQfYI7mQvX8t6T7I0e6Y9u9u9u9u9u9u9u9u9u9u9u9u9u9', 0, 'system', NOW(), 0);
+
+-- 普通用户 (密码: user123)
+INSERT INTO `sys_auth_user` (`user_name`, `nick_name`, `email`, `phone`, `password`, `status`, `created_by`, `created_time`, `is_deleted`)
+VALUES
+('user', '普通用户', 'user@codefarm.com', '13800138001', '$2a$10$E6zqOQfYI7mQvX8t6T7I0e6Y9u9u9u9u9u9u9u9u9u9u9u9u9', 0, 'system', NOW(), 0);
+
+-- ----------------------------
+-- 用户角色关联数据
+-- ----------------------------
+-- 管理员用户关联管理员角色
+INSERT INTO `sys_auth_user_role` (`user_id`, `role_id`, `created_by`, `created_time`, `is_deleted`)
+VALUES
+(1, 1, 'system', NOW(), 0);
+
+-- 普通用户关联普通用户角色
+INSERT INTO `sys_auth_user_role` (`user_id`, `role_id`, `created_by`, `created_time`, `is_deleted`)
+VALUES
+(2, 2, 'system', NOW(), 0);
+
 SET FOREIGN_KEY_CHECKS = 1;

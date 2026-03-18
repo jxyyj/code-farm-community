@@ -2,7 +2,6 @@ spring:
   profiles:
     active: dev
 
-# 基础配置
-spring:
+  # 基础配置
   application:
     name: code-farm-community

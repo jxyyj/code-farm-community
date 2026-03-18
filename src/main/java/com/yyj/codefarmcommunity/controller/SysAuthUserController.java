@@ -14,7 +14,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
  * 用户管理控制器
  */
 @RestController
-@RequestMapping("/api/auth/user")
+@RequestMapping("/api/user")
 @Tag(name = "用户管理", description = "用户信息的增删改查操作")
 public class SysAuthUserController {
     
@@ -36,7 +36,7 @@ public class SysAuthUserController {
                       @RequestParam(defaultValue = "10") Integer size) {
         IPage<SysAuthUser> userPage = new Page<>(page, size);
         IPage<SysAuthUser> result = sysAuthUserService.page(userPage);
-        return Result.ok(result);
+        return Result.success(result);
     }
     
     /**
@@ -48,7 +48,7 @@ public class SysAuthUserController {
     @Operation(summary = "根据ID查询用户", description = "根据用户ID查询用户详细信息")
     public Result getById(@PathVariable Long id) {
         SysAuthUser user = sysAuthUserService.getById(id);
-        return user != null ? Result.ok(user) : Result.notFound("用户不存在");
+        return user != null ? Result.success(user) : Result.notFound("用户不存在");
     }
     
     /**
@@ -60,7 +60,7 @@ public class SysAuthUserController {
     @Operation(summary = "新增用户", description = "创建新用户")
     public Result add(@RequestBody SysAuthUser user) {
         boolean success = sysAuthUserService.save(user);
-        return success ? Result.ok("新增成功") : Result.error("新增失败");
+        return success ? Result.success("新增成功") : Result.error("新增失败");
     }
     
     /**
@@ -72,7 +72,7 @@ public class SysAuthUserController {
     @Operation(summary = "更新用户", description = "更新用户信息")
     public Result update(@RequestBody SysAuthUser user) {
         boolean success = sysAuthUserService.updateById(user);
-        return success ? Result.ok("更新成功") : Result.error("更新失败");
+        return success ? Result.success("更新成功") : Result.error("更新失败");
     }
     
     /**
@@ -84,7 +84,7 @@ public class SysAuthUserController {
     @Operation(summary = "删除用户", description = "根据用户ID删除用户")
     public Result delete(@PathVariable Long id) {
         boolean success = sysAuthUserService.removeById(id);
-        return success ? Result.ok("删除成功") : Result.error("删除失败");
+        return success ? Result.success("删除成功") : Result.error("删除失败");
     }
     
     /**
@@ -122,6 +122,6 @@ public class SysAuthUserController {
         }
         
         IPage<SysAuthUser> result = sysAuthUserService.page(userPage, queryWrapper);
-        return Result.ok(result);
+        return Result.success(result);
     }
 }

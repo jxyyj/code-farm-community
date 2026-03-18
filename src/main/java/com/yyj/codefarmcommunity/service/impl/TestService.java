@@ -1,4 +1,4 @@
-package com.yyj.codefarmcommunity.service;
+package com.yyj.codefarmcommunity.service.impl;
 
 import org.springframework.stereotype.Service;
 

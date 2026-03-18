@@ -67,7 +67,7 @@ public class SysAuthPermission implements Serializable {
     /**
      * 展示状态 0展示 1隐藏
      */
-    @TableField(value = "show")
+    @TableField(value = "`show`")
     private Integer show;
 
     /**

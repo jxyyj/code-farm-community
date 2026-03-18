@@ -14,7 +14,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
  * 角色管理控制器
  */
 @RestController
-@RequestMapping("/api/auth/role")
+@RequestMapping("/api/role")
 @Tag(name = "角色管理", description = "角色信息的增删改查操作")
 public class SysAuthRoleController {
     
@@ -36,7 +36,7 @@ public class SysAuthRoleController {
                       @RequestParam(defaultValue = "10") Integer size) {
         IPage<SysAuthRole> rolePage = new Page<>(page, size);
         IPage<SysAuthRole> result = sysAuthRoleService.page(rolePage);
-        return Result.ok(result);
+        return Result.success(result);
     }
     
     /**
@@ -48,7 +48,7 @@ public class SysAuthRoleController {
     @Operation(summary = "根据ID查询角色", description = "根据角色ID查询角色详细信息")
     public Result getById(@PathVariable Long id) {
         SysAuthRole role = sysAuthRoleService.getById(id);
-        return role != null ? Result.ok(role) : Result.notFound("角色不存在");
+        return role != null ? Result.success(role) : Result.notFound("角色不存在");
     }
     
     /**
@@ -60,7 +60,7 @@ public class SysAuthRoleController {
     @Operation(summary = "新增角色", description = "创建新角色")
     public Result add(@RequestBody SysAuthRole role) {
         boolean success = sysAuthRoleService.save(role);
-        return success ? Result.ok("新增成功") : Result.error("新增失败");
+        return success ? Result.success("新增成功") : Result.error("新增失败");
     }
     
     /**
@@ -72,7 +72,7 @@ public class SysAuthRoleController {
     @Operation(summary = "更新角色", description = "更新角色信息")
     public Result update(@RequestBody SysAuthRole role) {
         boolean success = sysAuthRoleService.updateById(role);
-        return success ? Result.ok("更新成功") : Result.error("更新失败");
+        return success ? Result.success("更新成功") : Result.error("更新失败");
     }
     
     /**
@@ -84,7 +84,7 @@ public class SysAuthRoleController {
     @Operation(summary = "删除角色", description = "根据角色ID删除角色")
     public Result delete(@PathVariable Long id) {
         boolean success = sysAuthRoleService.removeById(id);
-        return success ? Result.ok("删除成功") : Result.error("删除失败");
+        return success ? Result.success("删除成功") : Result.error("删除失败");
     }
     
     /**
@@ -112,6 +112,6 @@ public class SysAuthRoleController {
         }
         
         IPage<SysAuthRole> result = sysAuthRoleService.page(rolePage, queryWrapper);
-        return Result.ok(result);
+        return Result.success(result);
     }
 }

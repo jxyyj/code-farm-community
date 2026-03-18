@@ -43,7 +43,7 @@ public class Result {
      * @param data 响应数据
      * @return 响应对象
      */
-    public static Result ok(Object data) {
+    public static Result success(Object data) {
         return new Result(200, "操作成功", data);
     }
     
@@ -51,7 +51,7 @@ public class Result {
      * 成功响应（无数据）
      * @return 响应对象
      */
-    public static Result ok() {
+    public static Result success() {
         return new Result(200, "操作成功", null);
     }
     
@@ -61,7 +61,7 @@ public class Result {
      * @param data 响应数据
      * @return 响应对象
      */
-    public static Result ok(String message, Object data) {
+    public static Result success(String message, Object data) {
         return new Result(200, message, data);
     }
     

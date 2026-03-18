@@ -1,41 +1,63 @@
 package com.yyj.codefarmcommunity.controller;
 
 import com.yyj.codefarmcommunity.common.Result;
+import com.yyj.codefarmcommunity.entity.SysAuthRole;
 import com.yyj.codefarmcommunity.entity.SysAuthUser;
+import com.yyj.codefarmcommunity.entity.SysAuthUserRole;
+import com.yyj.codefarmcommunity.service.SysAuthRoleService;
 import com.yyj.codefarmcommunity.service.SysAuthUserService;
+import com.yyj.codefarmcommunity.service.SysAuthUserRoleService;
+import com.yyj.codefarmcommunity.service.SysAuthPermissionService;
 import com.yyj.codefarmcommunity.utils.JwtUtil;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.yyj.codefarmcommunity.vo.LoginRequest;
 import com.yyj.codefarmcommunity.vo.RegisterRequest;
+import io.jsonwebtoken.Claims;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
  * 认证控制器
  */
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping("/api")
 @Tag(name = "认证管理", description = "登录、注册等认证操作")
 public class AuthController {
+    
+    private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
     
     private final SysAuthUserService sysAuthUserService;
     private final AuthenticationManager authenticationManager;
     private final PasswordEncoder passwordEncoder;
+    private final SysAuthUserRoleService sysAuthUserRoleService;
+    private final SysAuthRoleService sysAuthRoleService;
+    private final SysAuthPermissionService sysAuthPermissionService;
     
     public AuthController(SysAuthUserService sysAuthUserService, 
                          AuthenticationManager authenticationManager, 
-                         PasswordEncoder passwordEncoder) {
+                         PasswordEncoder passwordEncoder, 
+                         SysAuthUserRoleService sysAuthUserRoleService,
+                         SysAuthRoleService sysAuthRoleService,
+                         SysAuthPermissionService sysAuthPermissionService) {
         this.sysAuthUserService = sysAuthUserService;
         this.authenticationManager = authenticationManager;
         this.passwordEncoder = passwordEncoder;
+        this.sysAuthUserRoleService = sysAuthUserRoleService;
+        this.sysAuthRoleService = sysAuthRoleService;
+        this.sysAuthPermissionService = sysAuthPermissionService;
     }
     
     /**
@@ -46,6 +68,7 @@ public class AuthController {
     @PostMapping("/login")
     @Operation(summary = "用户登录", description = "用户登录并获取 token")
     public Result login(@RequestBody LoginRequest loginRequest) {
+        logger.info("用户登录请求: {}", loginRequest.getUserName());
         try {
             // 进行身份认证
             Authentication authentication = authenticationManager.authenticate(
@@ -59,13 +82,24 @@ public class AuthController {
             SecurityContextHolder.getContext().setAuthentication(authentication);
             
             // 从数据库中获取用户信息
-            SysAuthUser user = sysAuthUserService.getOne(
-                new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<SysAuthUser>()
-                    .eq("user_name", loginRequest.getUserName())
-            );
+            SysAuthUser user = getUserByUserName(loginRequest.getUserName());
+            
+            if (user == null) {
+                logger.warn("用户不存在: {}", loginRequest.getUserName());
+                return Result.error(404, "用户不存在");
+            }
+            
+            // 获取用户角色和权限
+            List<String> roles = sysAuthRoleService.getRolesByUserId(user.getId());
+            List<String> permissions = sysAuthPermissionService.getPermissionsByUserId(user.getId());
+            
+            // 构建token的额外信息
+            Map<String, Object> claims = new HashMap<>();
+            claims.put("roles", roles);
+            claims.put("permissions", permissions);
             
             // 生成 token
-            String token = JwtUtil.generateToken(user.getId(), user.getUserName());
+            String token = JwtUtil.generateToken(user.getId(), user.getUserName(), claims);
             
             // 构建响应数据
             Map<String, Object> data = new HashMap<>();
@@ -73,8 +107,10 @@ public class AuthController {
             data.put("userName", user.getUserName());
             data.put("userId", user.getId());
             
-            return Result.ok(data).addExtra("message", "登录成功");
+            logger.info("用户登录成功: {}", loginRequest.getUserName());
+            return Result.success(data).addExtra("message", "登录成功");
         } catch (Exception e) {
+            logger.error("用户登录失败: {}", loginRequest.getUserName(), e);
             return Result.error(401, "用户名或密码错误");
         }
     }
@@ -87,41 +123,38 @@ public class AuthController {
     @PostMapping("/register")
     @Operation(summary = "用户注册", description = "用户注册并获取 token")
     public Result register(@RequestBody RegisterRequest registerRequest) {
+        logger.info("用户注册请求: {}", registerRequest.getUserName());
         try {
-            // 检查用户是否已存在
-            SysAuthUser existingUser = sysAuthUserService.getOne(
-                new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<SysAuthUser>()
-                    .eq("user_name", registerRequest.getUserName())
-            );
+            // 调用服务层的注册方法（包含事务）
+            SysAuthUser user = sysAuthUserService.register(registerRequest);
+
+            // 获取用户角色和权限
+            List<String> roles = sysAuthRoleService.getRolesByUserId(user.getId());
+            List<String> permissions = sysAuthPermissionService.getPermissionsByUserId(user.getId());
             
-            if (existingUser != null) {
-                return Result.error(400, "用户名已存在");
-            }
-            
-            // 创建新用户
-            SysAuthUser user = new SysAuthUser();
-            user.setUserName(registerRequest.getUserName());
-            user.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
-            user.setNickName(registerRequest.getNickName());
-            user.setEmail(registerRequest.getEmail());
-            user.setPhone(registerRequest.getPhone());
-            user.setStatus(0); // 0 启用
-            user.setIsDeleted(0); // 0 未删除
-            
-            // 保存用户到数据库
-            sysAuthUserService.save(user);
+            // 构建token的额外信息
+            Map<String, Object> claims = new HashMap<>();
+            claims.put("roles", roles);
+            claims.put("permissions", permissions);
             
             // 生成 token
-            String token = JwtUtil.generateToken(user.getId(), user.getUserName());
+            String token = JwtUtil.generateToken(user.getId(), user.getUserName(), claims);
             
             // 构建响应数据
             Map<String, Object> data = new HashMap<>();
             data.put("token", token);
             data.put("userName", user.getUserName());
             data.put("userId", user.getId());
+            data.put("role", roles);
+            data.put("permissions", permissions);
             
-            return Result.ok(data).addExtra("message", "注册成功");
+            logger.info("用户注册成功: {}", registerRequest.getUserName());
+            return Result.success(data).addExtra("message", "注册成功");
+        } catch (RuntimeException e) {
+            logger.error("用户注册失败: {}", registerRequest.getUserName(), e);
+            return Result.error(400, e.getMessage());
         } catch (Exception e) {
+            logger.error("用户注册失败: {}", registerRequest.getUserName(), e);
             return Result.error(500, "注册失败: " + e.getMessage());
         }
     }
@@ -132,34 +165,61 @@ public class AuthController {
      */
     @GetMapping("/me")
     @Operation(summary = "获取当前用户信息", description = "根据 token 获取当前用户信息")
-    public Result getCurrentUser() {
+    public Result getCurrentUser(HttpServletRequest request) {
         try {
-            // 从安全上下文获取认证信息
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            String username = authentication.getName();
-            
-            // 从数据库中获取用户信息
-            SysAuthUser user = sysAuthUserService.getOne(
-                new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<SysAuthUser>()
-                    .eq("user_name", username)
-            );
-            
-            if (user == null) {
-                return Result.error(404, "用户不存在");
+            // 从请求头中获取 token
+            String token = null;
+            String authorizationHeader = request.getHeader("Authorization");
+            if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
+                token = authorizationHeader.substring(7);
             }
             
-            // 构建用户信息
-            Map<String, Object> userInfo = new HashMap<>();
-            userInfo.put("userId", user.getId());
-            userInfo.put("userName", user.getUserName());
-            userInfo.put("nickName", user.getNickName());
-            userInfo.put("email", user.getEmail());
-            userInfo.put("phone", user.getPhone());
-            userInfo.put("status", user.getStatus());
+            if (token == null || token.isEmpty()) {
+                logger.warn("未提供 token");
+                return Result.error(401, "未认证: 请先登录");
+            }
             
-            return Result.ok(userInfo);
+            // 验证 token
+            if (!JwtUtil.validateToken(token)) {
+                logger.warn("token 无效或已过期");
+                return Result.error(401, "未认证: token 已过期，请重新登录");
+            }
+            
+            // 从 token 中获取用户信息
+            Claims claims = JwtUtil.parseToken(token);
+
+            return Result.success(claims);
         } catch (Exception e) {
+            logger.error("获取用户信息失败", e);
             return Result.error(500, "获取用户信息失败: " + e.getMessage());
         }
+    }
+    
+    /**
+     * 根据用户名获取用户信息
+     * @param userName 用户名
+     * @return 用户信息
+     */
+    private SysAuthUser getUserByUserName(String userName) {
+        return sysAuthUserService.getOne(
+            new QueryWrapper<SysAuthUser>()
+                .eq("user_name", userName)
+        );
+    }
+    
+    /**
+     * 构建用户信息响应
+     * @param user 用户信息
+     * @return 用户信息响应
+     */
+    private Map<String, Object> buildUserInfo(SysAuthUser user) {
+        Map<String, Object> userInfo = new HashMap<>();
+        userInfo.put("userId", user.getId());
+        userInfo.put("userName", user.getUserName());
+        userInfo.put("nickName", user.getNickName());
+        userInfo.put("email", user.getEmail());
+        userInfo.put("phone", user.getPhone());
+        userInfo.put("status", user.getStatus());
+        return userInfo;
     }
 }

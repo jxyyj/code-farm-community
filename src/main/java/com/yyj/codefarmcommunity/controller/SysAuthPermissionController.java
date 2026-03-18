@@ -14,7 +14,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
  * 权限管理控制器
  */
 @RestController
-@RequestMapping("/api/auth/permission")
+@RequestMapping("/api/permission")
 @Tag(name = "权限管理", description = "权限信息的增删改查操作")
 public class SysAuthPermissionController {
     
@@ -36,7 +36,7 @@ public class SysAuthPermissionController {
                       @RequestParam(defaultValue = "10") Integer size) {
         IPage<SysAuthPermission> permissionPage = new Page<>(page, size);
         IPage<SysAuthPermission> result = sysAuthPermissionService.page(permissionPage);
-        return Result.ok(result);
+        return Result.success(result);
     }
     
     /**
@@ -48,7 +48,7 @@ public class SysAuthPermissionController {
     @Operation(summary = "根据ID查询权限", description = "根据权限ID查询权限详细信息")
     public Result getById(@PathVariable Long id) {
         SysAuthPermission permission = sysAuthPermissionService.getById(id);
-        return permission != null ? Result.ok(permission) : Result.notFound("权限不存在");
+        return permission != null ? Result.success(permission) : Result.notFound("权限不存在");
     }
     
     /**
@@ -60,7 +60,7 @@ public class SysAuthPermissionController {
     @Operation(summary = "新增权限", description = "创建新权限")
     public Result add(@RequestBody SysAuthPermission permission) {
         boolean success = sysAuthPermissionService.save(permission);
-        return success ? Result.ok("新增成功") : Result.error("新增失败");
+        return success ? Result.success("新增成功") : Result.error("新增失败");
     }
     
     /**
@@ -72,7 +72,7 @@ public class SysAuthPermissionController {
     @Operation(summary = "更新权限", description = "更新权限信息")
     public Result update(@RequestBody SysAuthPermission permission) {
         boolean success = sysAuthPermissionService.updateById(permission);
-        return success ? Result.ok("更新成功") : Result.error("更新失败");
+        return success ? Result.success("更新成功") : Result.error("更新失败");
     }
     
     /**
@@ -84,7 +84,7 @@ public class SysAuthPermissionController {
     @Operation(summary = "删除权限", description = "根据权限ID删除权限")
     public Result delete(@PathVariable Long id) {
         boolean success = sysAuthPermissionService.removeById(id);
-        return success ? Result.ok("删除成功") : Result.error("删除失败");
+        return success ? Result.success("删除成功") : Result.error("删除失败");
     }
     
     /**
@@ -122,6 +122,6 @@ public class SysAuthPermissionController {
         }
         
         IPage<SysAuthPermission> result = sysAuthPermissionService.page(permissionPage, queryWrapper);
-        return Result.ok(result);
+        return Result.success(result);
     }
 }
