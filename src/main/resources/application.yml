@@ -1,0 +1,8 @@
+spring:
+  profiles:
+    active: dev
+
+# 基础配置
+spring:
+  application:
+    name: code-farm-community
