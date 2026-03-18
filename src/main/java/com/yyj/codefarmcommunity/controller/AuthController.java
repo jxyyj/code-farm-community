@@ -1,9 +1,7 @@
 package com.yyj.codefarmcommunity.controller;
 
 import com.yyj.codefarmcommunity.common.Result;
-import com.yyj.codefarmcommunity.entity.SysAuthRole;
 import com.yyj.codefarmcommunity.entity.SysAuthUser;
-import com.yyj.codefarmcommunity.entity.SysAuthUserRole;
 import com.yyj.codefarmcommunity.service.SysAuthRoleService;
 import com.yyj.codefarmcommunity.service.SysAuthUserService;
 import com.yyj.codefarmcommunity.service.SysAuthUserRoleService;
@@ -41,21 +39,15 @@ public class AuthController {
     
     private final SysAuthUserService sysAuthUserService;
     private final AuthenticationManager authenticationManager;
-    private final PasswordEncoder passwordEncoder;
-    private final SysAuthUserRoleService sysAuthUserRoleService;
     private final SysAuthRoleService sysAuthRoleService;
     private final SysAuthPermissionService sysAuthPermissionService;
     
     public AuthController(SysAuthUserService sysAuthUserService, 
-                         AuthenticationManager authenticationManager, 
-                         PasswordEncoder passwordEncoder, 
-                         SysAuthUserRoleService sysAuthUserRoleService,
+                         AuthenticationManager authenticationManager,
                          SysAuthRoleService sysAuthRoleService,
                          SysAuthPermissionService sysAuthPermissionService) {
         this.sysAuthUserService = sysAuthUserService;
         this.authenticationManager = authenticationManager;
-        this.passwordEncoder = passwordEncoder;
-        this.sysAuthUserRoleService = sysAuthUserRoleService;
         this.sysAuthRoleService = sysAuthRoleService;
         this.sysAuthPermissionService = sysAuthPermissionService;
     }
@@ -205,21 +197,5 @@ public class AuthController {
             new QueryWrapper<SysAuthUser>()
                 .eq("user_name", userName)
         );
-    }
-    
-    /**
-     * 构建用户信息响应
-     * @param user 用户信息
-     * @return 用户信息响应
-     */
-    private Map<String, Object> buildUserInfo(SysAuthUser user) {
-        Map<String, Object> userInfo = new HashMap<>();
-        userInfo.put("userId", user.getId());
-        userInfo.put("userName", user.getUserName());
-        userInfo.put("nickName", user.getNickName());
-        userInfo.put("email", user.getEmail());
-        userInfo.put("phone", user.getPhone());
-        userInfo.put("status", user.getStatus());
-        return userInfo;
     }
 }

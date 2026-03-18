@@ -2,7 +2,6 @@ package com.yyj.codefarmcommunity.utils;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.stereotype.Component;
 
@@ -16,17 +15,17 @@ import java.util.Map;
  */
 @Component
 public class JwtUtil {
-    
-    // 密钥
+
+    /**
+     * 密钥
+     */
     private static final SecretKey SECRET_KEY = Keys.hmacShaKeyFor("code-farm-community-secret-key-2026".getBytes());
-    
-    // 过期时间（24小时）
+
+    /**
+     * 过期时间（24小时）
+     */
     private static final long EXPIRE_TIME = 24 * 60 * 60 * 1000;
-    
-    // 生成密钥对象
-    private static Key getSigningKey() {
-        return Keys.hmacShaKeyFor(SECRET_KEY.getEncoded());
-    }
+
     
     /**
      * 生成 token
@@ -50,16 +49,6 @@ public class JwtUtil {
     }
     
     /**
-     * 生成 token（简化版）
-     * @param userId 用户ID
-     * @param username 用户名
-     * @return token
-     */
-    public static String generateToken(Long userId, String username) {
-        return generateToken(userId, username, null);
-    }
-    
-    /**
      * 解析 token
      * @param token token
      * @return Claims
@@ -70,46 +59,6 @@ public class JwtUtil {
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
-    }
-    
-    /**
-     * 从 token 中获取用户ID
-     * @param token token
-     * @return 用户ID
-     */
-    public static Long getUserIdFromToken(String token) {
-        Claims claims = parseToken(token);
-        return Long.parseLong(claims.getSubject());
-    }
-    
-    /**
-     * 从 token 中获取用户名
-     * @param token token
-     * @return 用户名
-     */
-    public static String getUsernameFromToken(String token) {
-        Claims claims = parseToken(token);
-        return claims.get("username", String.class);
-    }
-    
-    /**
-     * 从 token 中获取角色
-     * @param token token
-     * @return 角色列表
-     */
-    public static java.util.List<String> getRolesFromToken(String token) {
-        Claims claims = parseToken(token);
-        return (java.util.List<String>) claims.get("roles");
-    }
-    
-    /**
-     * 从 token 中获取权限
-     * @param token token
-     * @return 权限列表
-     */
-    public static java.util.List<String> getPermissionsFromToken(String token) {
-        Claims claims = parseToken(token);
-        return (java.util.List<String>) claims.get("permissions");
     }
     
     /**

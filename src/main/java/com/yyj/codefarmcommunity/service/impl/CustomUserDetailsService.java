@@ -1,8 +1,7 @@
 package com.yyj.codefarmcommunity.service.impl;
 
-import com.yyj.codefarmcommunity.entity.SysAuthRole;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.yyj.codefarmcommunity.entity.SysAuthUser;
-import com.yyj.codefarmcommunity.entity.SysAuthUserRole;
 import com.yyj.codefarmcommunity.service.SysAuthRoleService;
 import com.yyj.codefarmcommunity.service.SysAuthUserService;
 import org.jspecify.annotations.NonNull;
@@ -12,8 +11,6 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -32,7 +29,7 @@ public class CustomUserDetailsService implements UserDetailsService {
     }
     
     @Override
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+    public @NonNull UserDetails loadUserByUsername(@NonNull String username) throws UsernameNotFoundException {
         // 从数据库中查询用户
         SysAuthUser user = sysAuthUserService.getOne(
             new QueryWrapper<SysAuthUser>()

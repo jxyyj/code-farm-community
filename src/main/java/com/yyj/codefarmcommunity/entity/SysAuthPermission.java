@@ -5,6 +5,8 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.fasterxml.jackson.annotation.JsonFormat;
+
+import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 import lombok.Data;
@@ -114,6 +116,7 @@ public class SysAuthPermission implements Serializable {
     @TableField(value = "is_deleted")
     private Integer isDeleted;
 
+    @Serial
     @TableField(exist = false)
     private static final long serialVersionUID = 1L;
 
@@ -172,28 +175,26 @@ public class SysAuthPermission implements Serializable {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(getClass().getSimpleName());
-        sb.append(" [");
-        sb.append("Hash = ").append(hashCode());
-        sb.append(", id=").append(id);
-        sb.append(", name=").append(name);
-        sb.append(", parentId=").append(parentId);
-        sb.append(", orderNum=").append(orderNum);
-        sb.append(", type=").append(type);
-        sb.append(", menuUrl=").append(menuUrl);
-        sb.append(", component=").append(component);
-        sb.append(", status=").append(status);
-        sb.append(", show=").append(show);
-        sb.append(", icon=").append(icon);
-        sb.append(", permissionKey=").append(permissionKey);
-        sb.append(", createdBy=").append(createdBy);
-        sb.append(", createdTime=").append(createdTime);
-        sb.append(", updateBy=").append(updateBy);
-        sb.append(", updateTime=").append(updateTime);
-        sb.append(", isDeleted=").append(isDeleted);
-        sb.append(", serialVersionUID=").append(serialVersionUID);
-        sb.append("]");
-        return sb.toString();
+        return getClass().getSimpleName() +
+                " [" +
+                "Hash = " + hashCode() +
+                ", id=" + id +
+                ", name=" + name +
+                ", parentId=" + parentId +
+                ", orderNum=" + orderNum +
+                ", type=" + type +
+                ", menuUrl=" + menuUrl +
+                ", component=" + component +
+                ", status=" + status +
+                ", show=" + show +
+                ", icon=" + icon +
+                ", permissionKey=" + permissionKey +
+                ", createdBy=" + createdBy +
+                ", createdTime=" + createdTime +
+                ", updateBy=" + updateBy +
+                ", updateTime=" + updateTime +
+                ", isDeleted=" + isDeleted +
+                ", serialVersionUID=" + serialVersionUID +
+                "]";
     }
 }
