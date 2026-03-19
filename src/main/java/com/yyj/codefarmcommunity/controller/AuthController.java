@@ -4,7 +4,6 @@ import com.yyj.codefarmcommunity.common.Result;
 import com.yyj.codefarmcommunity.entity.SysAuthUser;
 import com.yyj.codefarmcommunity.service.SysAuthRoleService;
 import com.yyj.codefarmcommunity.service.SysAuthUserService;
-import com.yyj.codefarmcommunity.service.SysAuthUserRoleService;
 import com.yyj.codefarmcommunity.service.SysAuthPermissionService;
 import com.yyj.codefarmcommunity.utils.JwtUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
@@ -19,10 +18,10 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -85,22 +84,18 @@ public class AuthController {
             List<String> roles = sysAuthRoleService.getRolesByUserId(user.getId());
             List<String> permissions = sysAuthPermissionService.getPermissionsByUserId(user.getId());
             
-            // 构建token的额外信息
+            // 构建token的信息
             Map<String, Object> claims = new HashMap<>();
+            claims.put("userId", user.getId());
+            claims.put("userName", user.getUserName());
             claims.put("roles", roles);
             claims.put("permissions", permissions);
             
             // 生成 token
-            String token = JwtUtil.generateToken(user.getId(), user.getUserName(), claims);
-            
-            // 构建响应数据
-            Map<String, Object> data = new HashMap<>();
-            data.put("token", token);
-            data.put("userName", user.getUserName());
-            data.put("userId", user.getId());
+            String token = JwtUtil.generateToken(claims);
             
             logger.info("用户登录成功: {}", loginRequest.getUserName());
-            return Result.success(data).addExtra("message", "登录成功");
+            return Result.success(claims).addExtra("token:", token);
         } catch (Exception e) {
             logger.error("用户登录失败: {}", loginRequest.getUserName(), e);
             return Result.error(401, "用户名或密码错误");
@@ -124,24 +119,18 @@ public class AuthController {
             List<String> roles = sysAuthRoleService.getRolesByUserId(user.getId());
             List<String> permissions = sysAuthPermissionService.getPermissionsByUserId(user.getId());
             
-            // 构建token的额外信息
+            // 构建token的信息
             Map<String, Object> claims = new HashMap<>();
+            claims.put("userId", user.getId());
+            claims.put("userName", user.getUserName());
             claims.put("roles", roles);
             claims.put("permissions", permissions);
             
             // 生成 token
-            String token = JwtUtil.generateToken(user.getId(), user.getUserName(), claims);
-            
-            // 构建响应数据
-            Map<String, Object> data = new HashMap<>();
-            data.put("token", token);
-            data.put("userName", user.getUserName());
-            data.put("userId", user.getId());
-            data.put("role", roles);
-            data.put("permissions", permissions);
+            String token = JwtUtil.generateToken(claims);
             
             logger.info("用户注册成功: {}", registerRequest.getUserName());
-            return Result.success(data).addExtra("message", "注册成功");
+            return Result.success(claims).addExtra("token:", token);
         } catch (RuntimeException e) {
             logger.error("用户注册失败: {}", registerRequest.getUserName(), e);
             return Result.error(400, e.getMessage());
@@ -179,8 +168,39 @@ public class AuthController {
             
             // 从 token 中获取用户信息
             Claims claims = JwtUtil.parseToken(token);
+            // 从 claims 中获取用户信息
+            String userId = claims.get("userId").toString();
+            String userName = claims.get("userName").toString();
+            // 安全地获取角色和权限列表
+            List<String> roles = new ArrayList<>();
+            List<String> permissions = new ArrayList<>();
+            
+            Object rolesObj = claims.get("roles");
+            if (rolesObj instanceof List) {
+                for (Object role : (List<?>) rolesObj) {
+                    if (role instanceof String) {
+                        roles.add((String) role);
+                    }
+                }
+            }
+            
+            Object permissionsObj = claims.get("permissions");
+            if (permissionsObj instanceof List) {
+                for (Object permission : (List<?>) permissionsObj) {
+                    if (permission instanceof String) {
+                        permissions.add((String) permission);
+                    }
+                }
+            }
 
-            return Result.success(claims);
+            // 构建响应数据
+            Map<String, Object> data = new HashMap<>();
+            data.put("userId", Long.parseLong(userId));
+            data.put("userName", userName);
+            data.put("roles", roles);
+            data.put("permissions", permissions);
+
+            return Result.success(data);
         } catch (Exception e) {
             logger.error("获取用户信息失败", e);
             return Result.error(500, "获取用户信息失败: " + e.getMessage());

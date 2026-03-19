@@ -105,18 +105,9 @@ code-farm-community/
 spring:
   datasource:
     url: jdbc:mysql://localhost:3306/code_farm_community?useSSL=false&serverTimezone=UTC
-    username: root
-    password: 123456
+    username: ****
+    password: ****
     driver-class-name: com.mysql.cj.jdbc.Driver
-```
-
-### JWT 配置
-在 `application.yml` 中配置：
-
-```yaml
-jwt:
-  secret: your-secret-key
-  expiration: 86400  # 24小时
 ```
 
 ## 依赖说明

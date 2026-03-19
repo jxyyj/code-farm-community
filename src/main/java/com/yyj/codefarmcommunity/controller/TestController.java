@@ -86,7 +86,7 @@ public class TestController {
     @GetMapping("/param")
     @Operation(summary = "测试参数异常", description = "测试参数异常捕获")
     public Result testIllegalArgumentException() {
-        throw new IllegalArgumentException("参数错误：参数不能为空");
+        throw new BusinessException(400, "参数错误：参数不能为空");
     }
     
     /**

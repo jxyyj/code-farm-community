@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 /**
  * 全局异常处理器
  */
-//@RestControllerAdvice
+@RestControllerAdvice
 public class GlobalExceptionHandler {
     
     private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
@@ -22,7 +22,10 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public Result handleException(Exception e) {
         logger.error("全局异常捕获:", e);
-        return Result.error("系统内部错误: " + e.getMessage());
+        StringBuilder errorMsg = new StringBuilder();
+        errorMsg.append("系统内部错误: " + e.getMessage());
+        errorMsg.append("\n异常位置: " + getExceptionLocation(e));
+        return Result.error(errorMsg.toString());
     }
     
     /**
@@ -33,7 +36,10 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(BusinessException.class)
     public Result handleBusinessException(BusinessException e) {
         logger.warn("业务异常: {}", e.getMessage());
-        return Result.error(e.getCode(), e.getMessage());
+        StringBuilder errorMsg = new StringBuilder();
+        errorMsg.append(e.getMessage());
+        errorMsg.append("\n异常位置: " + getExceptionLocation(e));
+        return Result.error(e.getCode(), errorMsg.toString());
     }
     
     /**
@@ -44,7 +50,10 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(IllegalArgumentException.class)
     public Result handleIllegalArgumentException(IllegalArgumentException e) {
         logger.warn("参数异常: {}", e.getMessage());
-        return Result.badRequest("参数错误: " + e.getMessage());
+        StringBuilder errorMsg = new StringBuilder();
+        errorMsg.append("参数错误: " + e.getMessage());
+        errorMsg.append("\n异常位置: " + getExceptionLocation(e));
+        return Result.badRequest(errorMsg.toString());
     }
     
     /**
@@ -55,6 +64,23 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(NullPointerException.class)
     public Result handleNullPointerException(NullPointerException e) {
         logger.error("空指针异常:", e);
-        return Result.error("系统错误: 空指针异常");
+        StringBuilder errorMsg = new StringBuilder();
+        errorMsg.append("系统错误: 空指针异常");
+        errorMsg.append("\n异常位置: " + getExceptionLocation(e));
+        return Result.error(errorMsg.toString());
+    }
+    
+    /**
+     * 获取异常发生的位置
+     * @param e 异常对象
+     * @return 异常位置信息
+     */
+    private String getExceptionLocation(Exception e) {
+        StackTraceElement[] stackTrace = e.getStackTrace();
+        if (stackTrace.length > 0) {
+            StackTraceElement element = stackTrace[0];
+            return element.getClassName() + "." + element.getMethodName() + "() at line " + element.getLineNumber();
+        }
+        return "未知位置";
     }
 }

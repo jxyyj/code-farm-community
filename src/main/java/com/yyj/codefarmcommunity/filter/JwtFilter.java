@@ -21,6 +21,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -31,13 +32,10 @@ import java.util.List;
 public class JwtFilter implements Filter {
     
     private final SysAuthUserService sysAuthUserService;
-    private final SysAuthRoleService sysAuthRoleService;
     private final ObjectMapper objectMapper;
     
-    public JwtFilter(SysAuthUserService sysAuthUserService, 
-                    SysAuthRoleService sysAuthRoleService) {
+    public JwtFilter(SysAuthUserService sysAuthUserService) {
         this.sysAuthUserService = sysAuthUserService;
-        this.sysAuthRoleService = sysAuthRoleService;
         this.objectMapper = new ObjectMapper();
     }
     
@@ -86,8 +84,8 @@ public class JwtFilter implements Filter {
         }
         
         // 从 token 中获取用户信息
-        Long userId = JwtUtil.getUserIdFromToken(token);
-        String username = JwtUtil.getUsernameFromToken(token);
+        Long userId = JwtUtil.parseToken(token).get("userId", Long.class);
+        String username = JwtUtil.parseToken(token).get("username", String.class);
         
         // 从数据库中获取用户信息
         SysAuthUser user = sysAuthUserService.getById(userId);
@@ -101,10 +99,13 @@ public class JwtFilter implements Filter {
         }
 
         // 从 token 中获取角色
-        List<String> roles = JwtUtil.getRolesFromToken(token);
-        if (roles == null) {
-            // 如果token中没有角色信息，从数据库中获取
-            roles = sysAuthRoleService.getRolesByUserId(user.getId());
+        List<String> roles = new ArrayList<>();
+        for (Object role : JwtUtil.parseToken(token).get("roles", List.class)) {
+            if (role instanceof String) {
+                roles.add((String) role);
+            } else {
+                log.warn("JWT 过滤器 - token 中角色格式错误, 角色: {}", role);
+            }
         }
 
         // 构建用户详情

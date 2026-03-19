@@ -6,7 +6,6 @@ import io.jsonwebtoken.security.Keys;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
-import java.security.Key;
 import java.util.Date;
 import java.util.Map;
 
@@ -29,21 +28,18 @@ public class JwtUtil {
     
     /**
      * 生成 token
-     * @param userId 用户ID
-     * @param username 用户名
+     *
      * @param claims 额外的声明
      * @return token
      */
-    public static String generateToken(Long userId, String username, Map<String, Object> claims) {
+    public static String generateToken(Map<String, Object> claims) {
         Date now = new Date();
         Date expireDate = new Date(now.getTime() + EXPIRE_TIME);
         
         return Jwts.builder()
                 .claims(claims)
-                .subject(userId.toString())
                 .issuedAt(now)
                 .expiration(expireDate)
-                .claim("username", username)
                 .signWith(SECRET_KEY)
                 .compact();
     }

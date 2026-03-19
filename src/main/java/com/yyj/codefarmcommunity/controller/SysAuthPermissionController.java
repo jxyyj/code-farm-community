@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import java.util.List;
 
 /**
  * 权限管理控制器
@@ -34,9 +35,7 @@ public class SysAuthPermissionController {
     @Operation(summary = "分页查询权限列表", description = "根据页码和每页大小查询权限列表")
     public Result list(@RequestParam(defaultValue = "1") Integer page, 
                       @RequestParam(defaultValue = "10") Integer size) {
-        IPage<SysAuthPermission> permissionPage = new Page<>(page, size);
-        IPage<SysAuthPermission> result = sysAuthPermissionService.page(permissionPage);
-        return Result.success(result);
+        return Result.success(sysAuthPermissionService.listPermissions(page, size));
     }
     
     /**
@@ -47,8 +46,8 @@ public class SysAuthPermissionController {
     @GetMapping("/get/{id}")
     @Operation(summary = "根据ID查询权限", description = "根据权限ID查询权限详细信息")
     public Result getById(@PathVariable Long id) {
-        SysAuthPermission permission = sysAuthPermissionService.getById(id);
-        return permission != null ? Result.success(permission) : Result.notFound("权限不存在");
+        SysAuthPermission permission = sysAuthPermissionService.getPermissionByIdWithCheck(id);
+        return Result.success(permission);
     }
     
     /**
@@ -59,7 +58,7 @@ public class SysAuthPermissionController {
     @PostMapping("/add")
     @Operation(summary = "新增权限", description = "创建新权限")
     public Result add(@RequestBody SysAuthPermission permission) {
-        boolean success = sysAuthPermissionService.save(permission);
+        boolean success = sysAuthPermissionService.addPermission(permission);
         return success ? Result.success("新增成功") : Result.error("新增失败");
     }
     
@@ -71,7 +70,7 @@ public class SysAuthPermissionController {
     @PutMapping("/update")
     @Operation(summary = "更新权限", description = "更新权限信息")
     public Result update(@RequestBody SysAuthPermission permission) {
-        boolean success = sysAuthPermissionService.updateById(permission);
+        boolean success = sysAuthPermissionService.updatePermission(permission);
         return success ? Result.success("更新成功") : Result.error("更新失败");
     }
     
@@ -83,7 +82,7 @@ public class SysAuthPermissionController {
     @DeleteMapping("/delete/{id}")
     @Operation(summary = "删除权限", description = "根据权限ID删除权限")
     public Result delete(@PathVariable Long id) {
-        boolean success = sysAuthPermissionService.removeById(id);
+        boolean success = sysAuthPermissionService.deletePermission(id);
         return success ? Result.success("删除成功") : Result.error("删除失败");
     }
     
@@ -105,23 +104,40 @@ public class SysAuthPermissionController {
                         @RequestParam(required = false) Integer type, 
                         @RequestParam(required = false) Integer status, 
                         @RequestParam(required = false) Long parentId) {
-        IPage<SysAuthPermission> permissionPage = new Page<>(page, size);
-        QueryWrapper<SysAuthPermission> queryWrapper = new QueryWrapper<>();
-        
-        if (name != null && !name.isEmpty()) {
-            queryWrapper.like("name", name);
-        }
-        if (type != null) {
-            queryWrapper.eq("type", type);
-        }
-        if (status != null) {
-            queryWrapper.eq("status", status);
-        }
-        if (parentId != null) {
-            queryWrapper.eq("parent_id", parentId);
-        }
-        
-        IPage<SysAuthPermission> result = sysAuthPermissionService.page(permissionPage, queryWrapper);
-        return Result.success(result);
+        return Result.success(sysAuthPermissionService.searchPermissions(page, size, name, type, status, parentId));
     }
+    
+    /**
+     * 查询所有权限
+     * @return 权限列表
+     */
+    @GetMapping("/all")
+    @Operation(summary = "查询所有权限", description = "查询所有未删除的权限列表")
+    public Result getAllPermissions() {
+        return Result.success(sysAuthPermissionService.getAllPermissions());
+    }
+    
+    /**
+     * 批量删除权限
+     * @param ids 权限ID列表
+     * @return 操作结果
+     */
+    @DeleteMapping("/delete/batch")
+    @Operation(summary = "批量删除权限", description = "批量删除多个权限")
+    public Result deleteBatch(@RequestBody List<Long> ids) {
+        boolean success = sysAuthPermissionService.deleteBatchPermissions(ids);
+        return success ? Result.success("批量删除成功") : Result.error("批量删除失败");
+    }
+
+    /**
+     * 统计权限总数
+     * @return 权限总数
+     */
+    @GetMapping("/count")
+    @Operation(summary = "统计权限总数", description = "统计所有未删除的权限数量")
+    public Result count() {
+        long count = sysAuthPermissionService.countPermissions();
+        return Result.success(count);
+    }
+
 }

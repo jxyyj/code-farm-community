@@ -2,7 +2,6 @@ package com.yyj.codefarmcommunity.config;
 
 import com.yyj.codefarmcommunity.filter.JwtFilter;
 import com.yyj.codefarmcommunity.service.SysAuthUserService;
-import com.yyj.codefarmcommunity.service.SysAuthRoleService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -13,12 +12,9 @@ import org.springframework.context.annotation.Configuration;
 public class JwtFilterConfig {
 
     private final SysAuthUserService sysAuthUserService;
-    private final SysAuthRoleService sysAuthRoleService;
 
-    public JwtFilterConfig(SysAuthUserService sysAuthUserService, 
-                          SysAuthRoleService sysAuthRoleService) {
+    public JwtFilterConfig(SysAuthUserService sysAuthUserService) {
         this.sysAuthUserService = sysAuthUserService;
-        this.sysAuthRoleService = sysAuthRoleService;
     }
 
     /**
@@ -27,7 +23,7 @@ public class JwtFilterConfig {
      */
     @Bean
     public JwtFilter jwtFilter() {
-        return new JwtFilter(sysAuthUserService, sysAuthRoleService);
+        return new JwtFilter(sysAuthUserService);
     }
 
 }

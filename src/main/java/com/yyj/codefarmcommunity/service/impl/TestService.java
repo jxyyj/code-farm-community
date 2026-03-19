@@ -1,9 +1,10 @@
 package com.yyj.codefarmcommunity.service.impl;
 
+import com.yyj.codefarmcommunity.exception.BusinessException;
 import org.springframework.stereotype.Service;
 
 /**
- * 测试服务类
+ * 测试服务
  */
 @Service
 public class TestService {
@@ -20,10 +21,10 @@ public class TestService {
     /**
      * 测试异常方法
      * @param message 异常消息
-     * @throws Exception 异常
+     * @throws BusinessException 异常
      */
-    public void testException(String message) throws Exception {
-        throw new Exception(message);
+    public void testException(String message) throws BusinessException {
+        throw new BusinessException(500, message);
     }
     
     /**
