@@ -37,6 +37,12 @@
             </template>
             <span>权限管理</span>
           </el-menu-item>
+          <el-menu-item index="/admin/profile">
+            <template #icon>
+              <el-icon><UserFilled /></el-icon>
+            </template>
+            <span>个人中心</span>
+          </el-menu-item>
         </el-menu>
       </el-aside>
       
@@ -49,6 +55,9 @@
               <el-icon><Menu /></el-icon>
             </el-button>
             <h2>{{ currentPage }}</h2>
+          </div>
+          <div class="header-center">
+            <iframe width="300" scrolling="no" height="30" frameborder="0" allowtransparency="true" src="https://i.tianqi.com?c=code&id=34&icon=1&site=12&lang=cn"></iframe>
           </div>
           <div class="header-right">
             <el-dropdown>
@@ -83,7 +92,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '../stores/user'
 import { ElMessage } from 'element-plus'
-import { House, User, Key, Lock, Menu, ArrowDown, SwitchButton } from '@element-plus/icons-vue'
+import { House, User, Key, Lock, Menu, ArrowDown, SwitchButton, UserFilled } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -103,6 +112,8 @@ const currentPage = computed(() => {
       return '角色管理'
     case '/admin/permissions':
       return '权限管理'
+    case '/admin/profile':
+      return '个人中心'
     default:
       return '控制台'
   }
@@ -204,7 +215,7 @@ onMounted(() => {
 }
 
 .admin-header {
-  background: white;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   padding: 0 20px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
   display: flex;
@@ -222,8 +233,15 @@ onMounted(() => {
 .header-left h2 {
   font-size: 18px;
   font-weight: 600;
-  color: #333;
+  color: white;
   margin: 0;
+}
+
+.header-center {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .header-right {
@@ -248,7 +266,7 @@ onMounted(() => {
 .user-name {
   font-size: 14px;
   font-weight: 500;
-  color: #333;
+  color: white;
 }
 
 .admin-content {

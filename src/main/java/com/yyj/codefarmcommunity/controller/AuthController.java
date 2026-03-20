@@ -213,9 +213,6 @@ public class AuthController {
      * @return 用户信息
      */
     private SysAuthUser getUserByUserName(String userName) {
-        return sysAuthUserService.getOne(
-            new QueryWrapper<SysAuthUser>()
-                .eq("user_name", userName)
-        );
+        return sysAuthUserService.getUserByUserName(userName);
     }
 }

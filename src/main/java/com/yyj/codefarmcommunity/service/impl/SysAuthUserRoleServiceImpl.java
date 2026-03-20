@@ -1,11 +1,10 @@
 package com.yyj.codefarmcommunity.service.impl;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.yyj.codefarmcommunity.entity.SysAuthUserRole;
 import com.yyj.codefarmcommunity.exception.BusinessException;
 import com.yyj.codefarmcommunity.service.SysAuthUserRoleService;
 import com.yyj.codefarmcommunity.mapper.SysAuthUserRoleMapper;
+import com.yyj.codefarmcommunity.utils.SecurityUtil;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,32 +16,33 @@ import java.util.List;
 * @createDate 2026-03-18 09:07:51
 */
 @Service
-public class SysAuthUserRoleServiceImpl extends ServiceImpl<SysAuthUserRoleMapper, SysAuthUserRole>
-    implements SysAuthUserRoleService{
+public class SysAuthUserRoleServiceImpl implements SysAuthUserRoleService{
+
+    private final SysAuthUserRoleMapper sysAuthUserRoleMapper;
+
+    public SysAuthUserRoleServiceImpl(SysAuthUserRoleMapper sysAuthUserRoleMapper) {
+        this.sysAuthUserRoleMapper = sysAuthUserRoleMapper;
+    }
 
     @Override
     public List<SysAuthUserRole> getUserRolesByUserId(Long userId) {
-        return this.list(
-            new QueryWrapper<SysAuthUserRole>()
-                .eq("user_id", userId)
-                .eq("is_deleted", 0)
-        );
+        return sysAuthUserRoleMapper.selectByUserId(userId);
     }
 
     @Override
     public List<SysAuthUserRole> getUserRolesByRoleId(Long roleId) {
-        return this.list(
-            new QueryWrapper<SysAuthUserRole>()
-                .eq("role_id", roleId)
-                .eq("is_deleted", 0)
-        );
+        return sysAuthUserRoleMapper.selectByRoleId(roleId);
     }
 
     @Override
-    public List<SysAuthUserRole> getUserRolesByCondition(QueryWrapper<SysAuthUserRole> queryWrapper) {
-        // 添加默认条件：未删除
-        queryWrapper.eq("is_deleted", 0);
-        return this.list(queryWrapper);
+    public List<SysAuthUserRole> getUserRolesByCondition(Long userId, Long roleId) {
+        if (userId != null) {
+            return sysAuthUserRoleMapper.selectByUserId(userId);
+        } else if (roleId != null) {
+            return sysAuthUserRoleMapper.selectByRoleId(roleId);
+        } else {
+            return List.of();
+        }
     }
 
     @Override
@@ -60,12 +60,7 @@ public class SysAuthUserRoleServiceImpl extends ServiceImpl<SysAuthUserRoleMappe
         }
 
         // 检查是否已存在
-        SysAuthUserRole existingUserRole = this.getOne(
-            new QueryWrapper<SysAuthUserRole>()
-                .eq("user_id", userRole.getUserId())
-                .eq("role_id", userRole.getRoleId())
-                .eq("is_deleted", 0)
-        );
+        SysAuthUserRole existingUserRole = sysAuthUserRoleMapper.selectByUserIdAndRoleId(userRole.getUserId(), userRole.getRoleId());
 
         if (existingUserRole != null) {
             throw new BusinessException(400, "用户角色关联已存在");
@@ -73,13 +68,17 @@ public class SysAuthUserRoleServiceImpl extends ServiceImpl<SysAuthUserRoleMappe
 
         // 设置默认值
         userRole.setIsDeleted(0);
+        // 设置创建人和更新人
+        String currentUserName = SecurityUtil.getCurrentUserName();
+        userRole.setCreatedBy(currentUserName);
+        userRole.setUpdateBy(currentUserName);
 
-        boolean success = this.save(userRole);
-        if (!success) {
+        int success = sysAuthUserRoleMapper.insert(userRole);
+        if (success == 0) {
             throw new BusinessException(500, "保存用户角色关联失败");
         }
 
-        return success;
+        return success > 0;
     }
 
     @Override
@@ -94,22 +93,20 @@ public class SysAuthUserRoleServiceImpl extends ServiceImpl<SysAuthUserRoleMappe
         }
 
         // 检查是否存在
-        SysAuthUserRole existingUserRole = this.getOne(
-            new QueryWrapper<SysAuthUserRole>()
-                .eq("id", userRole.getId())
-                .eq("is_deleted", 0)
-        );
+        SysAuthUserRole existingUserRole = sysAuthUserRoleMapper.selectById(userRole.getId());
 
         if (existingUserRole == null) {
             throw new BusinessException(404, "用户角色关联不存在或已删除");
         }
 
-        boolean success = this.updateById(userRole);
-        if (!success) {
+        // 设置更新人
+        userRole.setUpdateBy(SecurityUtil.getCurrentUserName());
+        int success = sysAuthUserRoleMapper.updateById(userRole);
+        if (success == 0) {
             throw new BusinessException(500, "更新用户角色关联失败");
         }
 
-        return success;
+        return success > 0;
     }
 
     @Override
@@ -121,11 +118,7 @@ public class SysAuthUserRoleServiceImpl extends ServiceImpl<SysAuthUserRoleMappe
         }
 
         // 检查是否存在
-        SysAuthUserRole userRole = this.getOne(
-            new QueryWrapper<SysAuthUserRole>()
-                .eq("id", id)
-                .eq("is_deleted", 0)
-        );
+        SysAuthUserRole userRole = sysAuthUserRoleMapper.selectById(id);
 
         if (userRole == null) {
             throw new BusinessException(404, "用户角色关联不存在或已删除");
@@ -133,12 +126,13 @@ public class SysAuthUserRoleServiceImpl extends ServiceImpl<SysAuthUserRoleMappe
 
         // 软删除
         userRole.setIsDeleted(1);
-        boolean success = this.updateById(userRole);
-        if (!success) {
+        userRole.setUpdateBy(SecurityUtil.getCurrentUserName());
+        int success = sysAuthUserRoleMapper.updateById(userRole);
+        if (success == 0) {
             throw new BusinessException(500, "删除用户角色关联失败");
         }
 
-        return success;
+        return success > 0;
     }
 
     @Override

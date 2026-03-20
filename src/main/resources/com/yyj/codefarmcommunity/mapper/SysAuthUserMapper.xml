@@ -28,4 +28,101 @@
         sex,avatar,status,introduce,ext_json,
         created_by,created_time,update_by,update_time,is_deleted
     </sql>
+
+    <insert id="insert" parameterType="com.yyj.codefarmcommunity.entity.SysAuthUser">
+        INSERT INTO sys_auth_user (user_name, password, nick_name, email, phone, status, is_deleted, created_time, update_time)
+        VALUES (#{userName}, #{password}, #{nickName}, #{email}, #{phone}, #{status}, #{isDeleted}, NOW(), NOW())
+    </insert>
+
+    <update id="updateById" parameterType="com.yyj.codefarmcommunity.entity.SysAuthUser">
+        UPDATE sys_auth_user
+        SET user_name = #{userName},
+            password = #{password},
+            nick_name = #{nickName},
+            email = #{email},
+            phone = #{phone},
+            status = #{status},
+            is_deleted = #{isDeleted},
+            update_by = #{updateBy},
+            update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List" />
+        FROM sys_auth_user
+        WHERE id = #{id} AND is_deleted = 0
+    </select>
+
+    <select id="selectByUserName" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List" />
+        FROM sys_auth_user
+        WHERE user_name = #{userName} AND is_deleted = 0
+    </select>
+
+    <select id="selectAll" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List" />
+        FROM sys_auth_user
+        WHERE is_deleted = 0
+        ORDER BY id DESC
+    </select>
+
+    <select id="selectByCondition" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List" />
+        FROM sys_auth_user
+        WHERE is_deleted = 0
+        <if test="userName != null and userName != ''">
+            AND user_name LIKE CONCAT('%', #{userName}, '%')
+        </if>
+        <if test="status != null">
+            AND status = #{status}
+        </if>
+        ORDER BY id DESC
+    </select>
+
+    <select id="selectPage" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List" />
+        FROM sys_auth_user
+        WHERE is_deleted = 0
+        ORDER BY id DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <select id="searchPage" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List" />
+        FROM sys_auth_user
+        WHERE is_deleted = 0
+        <if test="userName != null and userName != ''">
+            AND user_name LIKE CONCAT('%', #{userName}, '%')
+        </if>
+        <if test="status != null">
+            AND status = #{status}
+        </if>
+        ORDER BY id DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <select id="count" resultType="long">
+        SELECT COUNT(*)
+        FROM sys_auth_user
+        WHERE is_deleted = 0
+    </select>
+
+    <select id="countByCondition" resultType="long">
+        SELECT COUNT(*)
+        FROM sys_auth_user
+        WHERE is_deleted = 0
+        <if test="userName != null and userName != ''">
+            AND user_name LIKE CONCAT('%', #{userName}, '%')
+        </if>
+        <if test="status != null">
+            AND status = #{status}
+        </if>
+    </select>
 </mapper>

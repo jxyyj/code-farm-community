@@ -31,10 +31,7 @@ public class CustomUserDetailsService implements UserDetailsService {
     @Override
     public @NonNull UserDetails loadUserByUsername(@NonNull String username) throws UsernameNotFoundException {
         // 从数据库中查询用户
-        SysAuthUser user = sysAuthUserService.getOne(
-            new QueryWrapper<SysAuthUser>()
-                .eq("user_name", username)
-        );
+        SysAuthUser user = sysAuthUserService.getUserByUserName(username);
         
         if (user == null) {
             throw new UsernameNotFoundException("用户不存在");

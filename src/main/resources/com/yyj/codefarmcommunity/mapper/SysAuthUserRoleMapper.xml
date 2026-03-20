@@ -19,4 +19,59 @@
         id,user_id,role_id,created_by,created_time,update_by,
         update_time,is_deleted
     </sql>
+
+    <insert id="insert" parameterType="com.yyj.codefarmcommunity.entity.SysAuthUserRole">
+        INSERT INTO sys_auth_user_role (user_id, role_id, is_deleted, created_time, update_time)
+        VALUES (#{userId}, #{roleId}, #{isDeleted}, NOW(), NOW())
+    </insert>
+
+    <update id="updateById" parameterType="com.yyj.codefarmcommunity.entity.SysAuthUserRole">
+        UPDATE sys_auth_user_role
+        SET user_id = #{userId},
+            role_id = #{roleId},
+            is_deleted = #{isDeleted},
+            update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List" />
+        FROM sys_auth_user_role
+        WHERE id = #{id} AND is_deleted = 0
+    </select>
+
+    <select id="selectByUserId" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List" />
+        FROM sys_auth_user_role
+        WHERE user_id = #{userId} AND is_deleted = 0
+    </select>
+
+    <select id="selectByRoleId" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List" />
+        FROM sys_auth_user_role
+        WHERE role_id = #{roleId} AND is_deleted = 0
+    </select>
+
+    <select id="selectByUserIdAndRoleId" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List" />
+        FROM sys_auth_user_role
+        WHERE user_id = #{userId} AND role_id = #{roleId} AND is_deleted = 0
+    </select>
+
+    <delete id="deleteByUserId">
+        DELETE FROM sys_auth_user_role
+        WHERE user_id = #{userId}
+    </delete>
+
+    <delete id="deleteByUserIdAndRoleIds">
+        DELETE FROM sys_auth_user_role
+        WHERE user_id = #{userId} AND role_id IN
+        <foreach collection="roleIds" item="roleId" open="(" close=")" separator=",">
+            #{roleId}
+        </foreach>
+    </delete>
 </mapper>

@@ -1,19 +1,18 @@
 package com.yyj.codefarmcommunity.service.impl;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.yyj.codefarmcommunity.entity.SysAuthRole;
 import com.yyj.codefarmcommunity.entity.SysAuthRolePermission;
 import com.yyj.codefarmcommunity.entity.SysAuthUserRole;
 import com.yyj.codefarmcommunity.entity.SysAuthPermission;
 import com.yyj.codefarmcommunity.service.SysAuthRoleService;
-import com.yyj.codefarmcommunity.service.SysAuthUserRoleService;
-import com.yyj.codefarmcommunity.service.SysAuthPermissionService;
-import com.yyj.codefarmcommunity.service.SysAuthRolePermissionService;
 import com.yyj.codefarmcommunity.mapper.SysAuthRoleMapper;
+import com.yyj.codefarmcommunity.mapper.SysAuthUserRoleMapper;
+import com.yyj.codefarmcommunity.mapper.SysAuthRolePermissionMapper;
+import com.yyj.codefarmcommunity.mapper.SysAuthPermissionMapper;
 import com.yyj.codefarmcommunity.exception.BusinessException;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.yyj.codefarmcommunity.utils.SecurityUtil;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,17 +26,18 @@ import java.util.HashSet;
 * @createDate 2026-03-18 09:07:51
 */
 @Service
-public class SysAuthRoleServiceImpl extends ServiceImpl<SysAuthRoleMapper, SysAuthRole>
-    implements SysAuthRoleService{
+public class SysAuthRoleServiceImpl implements SysAuthRoleService{
 
-    private final SysAuthUserRoleService sysAuthUserRoleService;
-    private final SysAuthRolePermissionService sysAuthRolePermissionService;
-    private final SysAuthPermissionService sysAuthPermissionService;
+    private final SysAuthRoleMapper sysAuthRoleMapper;
+    private final SysAuthUserRoleMapper sysAuthUserRoleMapper;
+    private final SysAuthRolePermissionMapper sysAuthRolePermissionMapper;
+    private final SysAuthPermissionMapper sysAuthPermissionMapper;
 
-    public SysAuthRoleServiceImpl(SysAuthUserRoleService sysAuthUserRoleService, SysAuthRolePermissionService sysAuthRolePermissionService, SysAuthPermissionService sysAuthPermissionService) {
-        this.sysAuthUserRoleService = sysAuthUserRoleService;
-        this.sysAuthRolePermissionService = sysAuthRolePermissionService;
-        this.sysAuthPermissionService = sysAuthPermissionService;
+    public SysAuthRoleServiceImpl(SysAuthRoleMapper sysAuthRoleMapper, SysAuthUserRoleMapper sysAuthUserRoleMapper, SysAuthRolePermissionMapper sysAuthRolePermissionMapper, SysAuthPermissionMapper sysAuthPermissionMapper) {
+        this.sysAuthRoleMapper = sysAuthRoleMapper;
+        this.sysAuthUserRoleMapper = sysAuthUserRoleMapper;
+        this.sysAuthRolePermissionMapper = sysAuthRolePermissionMapper;
+        this.sysAuthPermissionMapper = sysAuthPermissionMapper;
     }
 
     @Override
@@ -45,16 +45,12 @@ public class SysAuthRoleServiceImpl extends ServiceImpl<SysAuthRoleMapper, SysAu
         List<String> roles = new ArrayList<>();
 
         // 查询用户角色关联
-        List<SysAuthUserRole> userRoles = sysAuthUserRoleService.list(
-            new QueryWrapper<SysAuthUserRole>()
-                .eq("user_id", userId)
-                .eq("is_deleted", 0)
-        );
+        List<SysAuthUserRole> userRoles = sysAuthUserRoleMapper.selectByUserId(userId);
 
         // 查询每个角色的详细信息
         for (SysAuthUserRole userRole : userRoles) {
-            SysAuthRole role = this.getById(userRole.getRoleId());
-            if (role != null && role.getIsDeleted() == 0) {
+            SysAuthRole role = sysAuthRoleMapper.selectById(userRole.getRoleId());
+            if (role != null) {
                 roles.add(role.getRoleKey());
             }
         }
@@ -69,27 +65,17 @@ public class SysAuthRoleServiceImpl extends ServiceImpl<SysAuthRoleMapper, SysAu
 
     @Override
     public List<SysAuthRole> getAllRoles() {
-        return this.list(
-            new QueryWrapper<SysAuthRole>()
-                .eq("is_deleted", 0)
-                .orderByDesc("id")
-        );
+        return sysAuthRoleMapper.selectAll();
     }
 
     @Override
     public SysAuthRole getRoleById(Long id) {
-        return this.getOne(
-            new QueryWrapper<SysAuthRole>()
-                .eq("id", id)
-                .eq("is_deleted", 0)
-        );
+        return sysAuthRoleMapper.selectById(id);
     }
 
     @Override
-    public List<SysAuthRole> getRolesByCondition(QueryWrapper<SysAuthRole> queryWrapper) {
-        // 添加默认条件：未删除
-        queryWrapper.eq("is_deleted", 0);
-        return this.list(queryWrapper);
+    public List<SysAuthRole> getRolesByCondition(String roleName, Integer status) {
+        return sysAuthRoleMapper.selectByCondition(roleName, status);
     }
 
     @Override
@@ -97,22 +83,18 @@ public class SysAuthRoleServiceImpl extends ServiceImpl<SysAuthRoleMapper, SysAu
         List<String> permissions = new ArrayList<>();
 
         // 查询角色权限关联
-        List<SysAuthRolePermission> rolePermissions = sysAuthRolePermissionService.list(
-            new QueryWrapper<SysAuthRolePermission>()
-                .eq("role_id", roleId)
-                .eq("is_deleted", 0)
-        );
+        List<SysAuthRolePermission> rolePermissions = sysAuthRolePermissionMapper.selectByRoleId(roleId);
 
         // 查询每个权限的详细信息
         for (SysAuthRolePermission rolePermission : rolePermissions) {
-            SysAuthPermission permission = sysAuthPermissionService.getById(rolePermission.getPermissionId());
-            if (permission != null && permission.getIsDeleted() == 0) {
+            SysAuthPermission permission = sysAuthPermissionMapper.selectById(rolePermission.getPermissionId());
+            if (permission != null) {
                 permissions.add(permission.getPermissionKey());
             }
         }
 
         // 去重
-        return new ArrayList<>(new java.util.HashSet<>(permissions));
+        return new ArrayList<>(new HashSet<>(permissions));
     }
 
     @Override
@@ -132,11 +114,11 @@ public class SysAuthRoleServiceImpl extends ServiceImpl<SysAuthRoleMapper, SysAu
     }
 
     @Override
-    public Map<String, List<String>> getRolesWithPermissionsByCondition(QueryWrapper<SysAuthRole> queryWrapper) {
+    public Map<String, List<String>> getRolesWithPermissionsByCondition(String roleName, Integer status) {
         Map<String, List<String>> rolePermissionsMap = new HashMap<>();
 
         // 条件查询角色
-        List<SysAuthRole> roles = this.getRolesByCondition(queryWrapper);
+        List<SysAuthRole> roles = this.getRolesByCondition(roleName, status);
 
         // 为每个角色查询权限
         for (SysAuthRole role : roles) {
@@ -148,13 +130,10 @@ public class SysAuthRoleServiceImpl extends ServiceImpl<SysAuthRoleMapper, SysAu
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public boolean grantPermissions(Long roleId, List<Long> permissionIds) {
         // 获取角色现有的权限
-        List<SysAuthRolePermission> existingPermissions = sysAuthRolePermissionService.list(
-            new QueryWrapper<SysAuthRolePermission>()
-                .eq("role_id", roleId)
-                .eq("is_deleted", 0)
-        );
+        List<SysAuthRolePermission> existingPermissions = sysAuthRolePermissionMapper.selectByRoleId(roleId);
 
         // 构建现有权限ID集合
         Set<Long> existingPermissionIds = new HashSet<>();
@@ -170,7 +149,7 @@ public class SysAuthRoleServiceImpl extends ServiceImpl<SysAuthRoleMapper, SysAu
                     rolePermission.setRoleId(roleId);
                     rolePermission.setPermissionId(permissionId);
                     rolePermission.setIsDeleted(0);
-                    sysAuthRolePermissionService.save(rolePermission);
+                    sysAuthRolePermissionMapper.insert(rolePermission);
                 }
             }
         }
@@ -179,49 +158,43 @@ public class SysAuthRoleServiceImpl extends ServiceImpl<SysAuthRoleMapper, SysAu
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public boolean revokePermissions(Long roleId, List<Long> permissionIds) {
         if (permissionIds != null && !permissionIds.isEmpty()) {
-            sysAuthRolePermissionService.remove(
-                new QueryWrapper<SysAuthRolePermission>()
-                    .eq("role_id", roleId)
-                    .in("permission_id", permissionIds)
-            );
+            sysAuthRolePermissionMapper.deleteByRoleIdAndPermissionIds(roleId, permissionIds);
         }
 
         return true;
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public boolean deleteRole(Long id) {
         // 检查角色是否存在
-        SysAuthRole role = this.getById(id);
-        if (role == null || role.getIsDeleted() == 1) {
+        SysAuthRole role = sysAuthRoleMapper.selectById(id);
+        if (role == null) {
             throw new BusinessException(404, "角色不存在或已删除");
         }
 
         // 检查是否有用户拥有该角色
-        List<SysAuthUserRole> userRoles = sysAuthUserRoleService.list(
-            new QueryWrapper<SysAuthUserRole>()
-                .eq("role_id", id)
-                .eq("is_deleted", 0)
-        );
+        List<SysAuthUserRole> userRoles = sysAuthUserRoleMapper.selectByRoleId(id);
 
         if (!userRoles.isEmpty()) {
             throw new BusinessException(400, "该角色已被用户使用，无法删除");
         }
 
         // 删除角色与权限的关联
-        sysAuthRolePermissionService.remove(
-            new QueryWrapper<SysAuthRolePermission>()
-                .eq("role_id", id)
-        );
+        sysAuthRolePermissionMapper.deleteByRoleId(id);
 
         // 删除角色
         role.setIsDeleted(1);
-        return this.updateById(role);
+        role.setUpdateBy(SecurityUtil.getCurrentUserName());
+        int success = sysAuthRoleMapper.updateById(role);
+        return success > 0;
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public boolean deleteBatchRoles(List<Long> ids) {
         if (ids != null && !ids.isEmpty()) {
             for (Long id : ids) {
@@ -235,12 +208,20 @@ public class SysAuthRoleServiceImpl extends ServiceImpl<SysAuthRoleMapper, SysAu
 
     @Override
     public long countRoles() {
-        // 构建查询条件：未删除的角色
-        QueryWrapper<SysAuthRole> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("is_deleted", 0);
-        
-        // 执行统计
-        return this.count(queryWrapper);
+        return sysAuthRoleMapper.count();
+    }
+
+    @Override
+    public boolean save(SysAuthRole role) {
+        role.setIsDeleted(0);
+        return sysAuthRoleMapper.insert(role) > 0;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean updateById(SysAuthRole role) {
+        role.setUpdateBy(SecurityUtil.getCurrentUserName());
+        return sysAuthRoleMapper.updateById(role) > 0;
     }
 
 }

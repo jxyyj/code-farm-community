@@ -88,7 +88,7 @@ public class JwtFilter implements Filter {
         String username = JwtUtil.parseToken(token).get("username", String.class);
         
         // 从数据库中获取用户信息
-        SysAuthUser user = sysAuthUserService.getById(userId);
+        SysAuthUser user = sysAuthUserService.getUserById(userId);
         if (user == null) {
             httpResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             httpResponse.setContentType("application/json;charset=UTF-8");

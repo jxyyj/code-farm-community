@@ -1,21 +1,20 @@
 package com.yyj.codefarmcommunity.service.impl;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.yyj.codefarmcommunity.entity.SysAuthPermission;
 import com.yyj.codefarmcommunity.entity.SysAuthRolePermission;
 import com.yyj.codefarmcommunity.entity.SysAuthUserRole;
 import com.yyj.codefarmcommunity.exception.BusinessException;
 import com.yyj.codefarmcommunity.service.SysAuthPermissionService;
-import com.yyj.codefarmcommunity.service.SysAuthRolePermissionService;
-import com.yyj.codefarmcommunity.service.SysAuthUserRoleService;
 import com.yyj.codefarmcommunity.mapper.SysAuthPermissionMapper;
+import com.yyj.codefarmcommunity.mapper.SysAuthUserRoleMapper;
+import com.yyj.codefarmcommunity.mapper.SysAuthRolePermissionMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.yyj.codefarmcommunity.utils.SecurityUtil;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,16 +25,17 @@ import java.util.List;
 * @createDate 2026-03-18 09:07:51
 */
 @Service
-public class SysAuthPermissionServiceImpl extends ServiceImpl<SysAuthPermissionMapper, SysAuthPermission>
-    implements SysAuthPermissionService{
+public class SysAuthPermissionServiceImpl implements SysAuthPermissionService{
     private final Logger logger = LoggerFactory.getLogger(SysAuthPermissionServiceImpl.class);
 
-    private final SysAuthUserRoleService sysAuthUserRoleService;
-    private final SysAuthRolePermissionService sysAuthRolePermissionService;
+    private final SysAuthPermissionMapper sysAuthPermissionMapper;
+    private final SysAuthUserRoleMapper sysAuthUserRoleMapper;
+    private final SysAuthRolePermissionMapper sysAuthRolePermissionMapper;
 
-    public SysAuthPermissionServiceImpl(SysAuthUserRoleService sysAuthUserRoleService, @org.springframework.context.annotation.Lazy SysAuthRolePermissionService sysAuthRolePermissionService) {
-        this.sysAuthUserRoleService = sysAuthUserRoleService;
-        this.sysAuthRolePermissionService = sysAuthRolePermissionService;
+    public SysAuthPermissionServiceImpl(SysAuthPermissionMapper sysAuthPermissionMapper, SysAuthUserRoleMapper sysAuthUserRoleMapper, SysAuthRolePermissionMapper sysAuthRolePermissionMapper) {
+        this.sysAuthPermissionMapper = sysAuthPermissionMapper;
+        this.sysAuthUserRoleMapper = sysAuthUserRoleMapper;
+        this.sysAuthRolePermissionMapper = sysAuthRolePermissionMapper;
     }
 
     @Override
@@ -43,25 +43,17 @@ public class SysAuthPermissionServiceImpl extends ServiceImpl<SysAuthPermissionM
         List<String> permissions = new ArrayList<>();
 
         // 查询用户角色关联
-        List<SysAuthUserRole> userRoles = sysAuthUserRoleService.list(
-            new QueryWrapper<SysAuthUserRole>()
-                .eq("user_id", userId)
-                .eq("is_deleted", 0)
-        );
+        List<SysAuthUserRole> userRoles = sysAuthUserRoleMapper.selectByUserId(userId);
 
         // 查询每个角色的权限
         for (SysAuthUserRole userRole : userRoles) {
             // 查询角色权限关联
-            List<SysAuthRolePermission> rolePermissions = sysAuthRolePermissionService.list(
-                new QueryWrapper<SysAuthRolePermission>()
-                    .eq("role_id", userRole.getRoleId())
-                    .eq("is_deleted", 0)
-            );
+            List<SysAuthRolePermission> rolePermissions = sysAuthRolePermissionMapper.selectByRoleId(userRole.getRoleId());
 
             // 查询每个权限的详细信息
             for (SysAuthRolePermission rolePermission : rolePermissions) {
-                SysAuthPermission permission = this.getById(rolePermission.getPermissionId());
-                if (permission != null && permission.getIsDeleted() == 0) {
+                SysAuthPermission permission = sysAuthPermissionMapper.selectById(rolePermission.getPermissionId());
+                if (permission != null) {
                     permissions.add(permission.getPermissionKey());
                 }
             }
@@ -73,51 +65,38 @@ public class SysAuthPermissionServiceImpl extends ServiceImpl<SysAuthPermissionM
 
     @Override
     public List<SysAuthPermission> getAllPermissions() {
-        return this.list(
-            new QueryWrapper<SysAuthPermission>()
-                .eq("is_deleted", 0)
-                .orderByAsc("permission_key")
-        );
+        return sysAuthPermissionMapper.selectAll();
     }
 
     @Override
     public SysAuthPermission getPermissionById(Long id) {
-        return this.getOne(
-            new QueryWrapper<SysAuthPermission>()
-                .eq("id", id)
-                .eq("is_deleted", 0)
-        );
+        return sysAuthPermissionMapper.selectById(id);
     }
 
     @Override
-    public List<SysAuthPermission> getPermissionsByCondition(QueryWrapper<SysAuthPermission> queryWrapper) {
-        // 添加默认条件：未删除
-        queryWrapper.eq("is_deleted", 0);
-        return this.list(queryWrapper);
+    public List<SysAuthPermission> getPermissionsByCondition(String name, Integer type, Integer status, Long parentId) {
+        return sysAuthPermissionMapper.selectByCondition(name, type, status, parentId);
     }
 
     @Override
     public IPage<SysAuthPermission> searchPermissions(Integer page, Integer size, String name, Integer type, Integer status, Long parentId) {
+        // 校验参数
+        if (page == null || page < 1) {
+            page = 1;
+        }
+        if (size == null || size < 1 || size > 100) {
+            size = 10;
+        }
+
+        int offset = (page - 1) * size;
+        List<SysAuthPermission> permissions = sysAuthPermissionMapper.searchPage(offset, size, name, type, status, parentId);
+        long total = sysAuthPermissionMapper.countByCondition(name, type, status, parentId);
+
         Page<SysAuthPermission> permissionPage = new Page<>(page, size);
-        QueryWrapper<SysAuthPermission> queryWrapper = new QueryWrapper<>();
-        
-        if (name != null && !name.isEmpty()) {
-            queryWrapper.like("name", name);
-        }
-        if (type != null) {
-            queryWrapper.eq("type", type);
-        }
-        if (status != null) {
-            queryWrapper.eq("status", status);
-        }
-        if (parentId != null) {
-            queryWrapper.eq("parent_id", parentId);
-        }
-        
-        // 添加默认条件：未删除
-        queryWrapper.eq("is_deleted", 0);
-        
-        return this.page(permissionPage, queryWrapper);
+        permissionPage.setRecords(permissions);
+        permissionPage.setTotal(total);
+
+        return permissionPage;
     }
 
     @Override
@@ -133,13 +112,15 @@ public class SysAuthPermissionServiceImpl extends ServiceImpl<SysAuthPermissionM
         // 记录日志
         logger.info("分页查询权限列表，页码：{}，每页大小：{}", page, size);
         
+        int offset = (page - 1) * size;
+        List<SysAuthPermission> permissions = sysAuthPermissionMapper.selectPage(offset, size);
+        long total = sysAuthPermissionMapper.count();
+
         Page<SysAuthPermission> permissionPage = new Page<>(page, size);
-        QueryWrapper<SysAuthPermission> queryWrapper = new QueryWrapper<>();
-        
-        // 添加默认条件：未删除
-        queryWrapper.eq("is_deleted", 0);
-        
-        return this.page(permissionPage, queryWrapper);
+        permissionPage.setRecords(permissions);
+        permissionPage.setTotal(total);
+
+        return permissionPage;
     }
 
     @Override
@@ -152,11 +133,7 @@ public class SysAuthPermissionServiceImpl extends ServiceImpl<SysAuthPermissionM
         // 记录日志
         logger.info("根据ID查询权限，权限ID：{}", id);
         
-        SysAuthPermission permission = this.getOne(
-            new QueryWrapper<SysAuthPermission>()
-                .eq("id", id)
-                .eq("is_deleted", 0)
-        );
+        SysAuthPermission permission = sysAuthPermissionMapper.selectById(id);
         
         if (permission == null) {
             logger.warn("权限不存在或已删除，权限ID：{}", id);
@@ -167,6 +144,7 @@ public class SysAuthPermissionServiceImpl extends ServiceImpl<SysAuthPermissionM
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public boolean addPermission(SysAuthPermission permission) {
         // 校验参数
         if (permission == null) {
@@ -183,11 +161,7 @@ public class SysAuthPermissionServiceImpl extends ServiceImpl<SysAuthPermissionM
         logger.info("新增权限，权限名称：{}", permission.getName());
         
         // 检查权限键是否已存在
-        SysAuthPermission existingPermission = this.getOne(
-            new QueryWrapper<SysAuthPermission>()
-                .eq("permission_key", permission.getPermissionKey())
-                .eq("is_deleted", 0)
-        );
+        SysAuthPermission existingPermission = sysAuthPermissionMapper.selectByPermissionKey(permission.getPermissionKey());
         
         if (existingPermission != null) {
             logger.warn("权限键已存在，权限键：{}", permission.getPermissionKey());
@@ -202,19 +176,24 @@ public class SysAuthPermissionServiceImpl extends ServiceImpl<SysAuthPermissionM
         if (permission.getOrderNum() == null) {
             permission.setOrderNum(0);
         }
+        // 设置创建人和更新人
+        String currentUserName = SecurityUtil.getCurrentUserName();
+        permission.setCreatedBy(currentUserName);
+        permission.setUpdateBy(currentUserName);
         
-        boolean success = this.save(permission);
-        if (success) {
+        int success = sysAuthPermissionMapper.insert(permission);
+        if (success > 0) {
             logger.info("新增权限成功，权限ID：{}", permission.getId());
         } else {
             logger.error("新增权限失败，权限名称：{}", permission.getName());
             throw new BusinessException(500, "新增权限失败");
         }
         
-        return success;
+        return success > 0;
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public boolean updatePermission(SysAuthPermission permission) {
         // 校验参数
         if (permission == null) {
@@ -234,11 +213,7 @@ public class SysAuthPermissionServiceImpl extends ServiceImpl<SysAuthPermissionM
         logger.info("更新权限，权限ID：{}，权限名称：{}", permission.getId(), permission.getName());
         
         // 检查权限是否存在
-        SysAuthPermission existingPermission = this.getOne(
-            new QueryWrapper<SysAuthPermission>()
-                .eq("id", permission.getId())
-                .eq("is_deleted", 0)
-        );
+        SysAuthPermission existingPermission = sysAuthPermissionMapper.selectById(permission.getId());
         
         if (existingPermission == null) {
             logger.warn("权限不存在或已删除，权限ID：{}", permission.getId());
@@ -246,30 +221,28 @@ public class SysAuthPermissionServiceImpl extends ServiceImpl<SysAuthPermissionM
         }
         
         // 检查权限键是否已存在（排除当前权限）
-        SysAuthPermission duplicatePermission = this.getOne(
-            new QueryWrapper<SysAuthPermission>()
-                .eq("permission_key", permission.getPermissionKey())
-                .ne("id", permission.getId())
-                .eq("is_deleted", 0)
-        );
-        
-        if (duplicatePermission != null) {
+        SysAuthPermission duplicatePermission = sysAuthPermissionMapper.selectByPermissionKey(permission.getPermissionKey());
+        if (duplicatePermission != null && !duplicatePermission.getId().equals(permission.getId())) {
             logger.warn("权限键已存在，权限键：{}", permission.getPermissionKey());
             throw new BusinessException(400, "权限键已存在");
         }
         
-        boolean success = this.updateById(permission);
-        if (success) {
+        // 设置更新人
+        permission.setUpdateBy(SecurityUtil.getCurrentUserName());
+        
+        int success = sysAuthPermissionMapper.updateById(permission);
+        if (success > 0) {
             logger.info("更新权限成功，权限ID：{}", permission.getId());
         } else {
             logger.error("更新权限失败，权限ID：{}", permission.getId());
             throw new BusinessException(500, "更新权限失败");
         }
         
-        return success;
+        return success > 0;
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public boolean deletePermission(Long id) {
         // 校验参数
         if (id == null || id <= 0) {
@@ -280,11 +253,7 @@ public class SysAuthPermissionServiceImpl extends ServiceImpl<SysAuthPermissionM
         logger.info("删除权限，权限ID：{}", id);
         
         // 检查权限是否存在
-        SysAuthPermission permission = this.getOne(
-            new QueryWrapper<SysAuthPermission>()
-                .eq("id", id)
-                .eq("is_deleted", 0)
-        );
+        SysAuthPermission permission = sysAuthPermissionMapper.selectById(id);
         
         if (permission == null) {
             logger.warn("权限不存在或已删除，权限ID：{}", id);
@@ -292,11 +261,7 @@ public class SysAuthPermissionServiceImpl extends ServiceImpl<SysAuthPermissionM
         }
         
         // 检查是否有角色关联该权限
-        List<SysAuthRolePermission> rolePermissions = sysAuthRolePermissionService.list(
-            new QueryWrapper<SysAuthRolePermission>()
-                .eq("permission_id", id)
-                .eq("is_deleted", 0)
-        );
+        List<SysAuthRolePermission> rolePermissions = sysAuthRolePermissionMapper.selectByPermissionId(id);
         
         if (!rolePermissions.isEmpty()) {
             logger.warn("该权限已被角色使用，无法删除，权限ID：{}", id);
@@ -305,18 +270,20 @@ public class SysAuthPermissionServiceImpl extends ServiceImpl<SysAuthPermissionM
         
         // 执行删除（软删除）
         permission.setIsDeleted(1);
-        boolean success = this.updateById(permission);
-        if (success) {
+        permission.setUpdateBy(SecurityUtil.getCurrentUserName());
+        int success = sysAuthPermissionMapper.updateById(permission);
+        if (success > 0) {
             logger.info("删除权限成功，权限ID：{}", id);
         } else {
             logger.error("删除权限失败，权限ID：{}", id);
             throw new BusinessException(500, "删除权限失败");
         }
         
-        return success;
+        return success > 0;
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public boolean deleteBatchPermissions(List<Long> ids) {
         // 校验参数
         if (ids == null || ids.isEmpty()) {
@@ -333,11 +300,7 @@ public class SysAuthPermissionServiceImpl extends ServiceImpl<SysAuthPermissionM
             }
             
             // 检查权限是否存在
-            SysAuthPermission permission = this.getOne(
-                new QueryWrapper<SysAuthPermission>()
-                    .eq("id", id)
-                    .eq("is_deleted", 0)
-            );
+            SysAuthPermission permission = sysAuthPermissionMapper.selectById(id);
             
             if (permission == null) {
                 logger.warn("权限不存在或已删除，权限ID：{}", id);
@@ -345,11 +308,7 @@ public class SysAuthPermissionServiceImpl extends ServiceImpl<SysAuthPermissionM
             }
             
             // 检查是否有角色关联该权限
-            List<SysAuthRolePermission> rolePermissions = sysAuthRolePermissionService.list(
-                new QueryWrapper<SysAuthRolePermission>()
-                    .eq("permission_id", id)
-                    .eq("is_deleted", 0)
-            );
+            List<SysAuthRolePermission> rolePermissions = sysAuthRolePermissionMapper.selectByPermissionId(id);
             
             if (!rolePermissions.isEmpty()) {
                 logger.warn("该权限已被角色使用，无法删除，权限ID：{}", id);
@@ -358,11 +317,13 @@ public class SysAuthPermissionServiceImpl extends ServiceImpl<SysAuthPermissionM
         }
         
         // 执行批量删除（软删除）
+        String currentUserName = SecurityUtil.getCurrentUserName();
         for (Long id : ids) {
-            SysAuthPermission permission = this.getById(id);
+            SysAuthPermission permission = sysAuthPermissionMapper.selectById(id);
             permission.setIsDeleted(1);
-            boolean success = this.updateById(permission);
-            if (!success) {
+            permission.setUpdateBy(currentUserName);
+            int success = sysAuthPermissionMapper.updateById(permission);
+            if (success == 0) {
                 logger.error("删除权限失败，权限ID：{}", id);
                 throw new BusinessException(500, "删除权限失败");
             }
@@ -377,12 +338,8 @@ public class SysAuthPermissionServiceImpl extends ServiceImpl<SysAuthPermissionM
         // 记录日志
         logger.info("统计权限总数");
         
-        // 构建查询条件：未删除的权限
-        QueryWrapper<SysAuthPermission> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("is_deleted", 0);
-        
         // 执行统计
-        long count = this.count(queryWrapper);
+        long count = sysAuthPermissionMapper.count();
         
         logger.info("权限总数：{}", count);
         return count;

@@ -1,24 +1,21 @@
 package com.yyj.codefarmcommunity.service.impl;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.yyj.codefarmcommunity.entity.SysAuthPermission;
 import com.yyj.codefarmcommunity.entity.SysAuthRole;
 import com.yyj.codefarmcommunity.entity.SysAuthRolePermission;
 import com.yyj.codefarmcommunity.entity.dto.RoleWithPermission;
 import com.yyj.codefarmcommunity.exception.BusinessException;
-import com.yyj.codefarmcommunity.service.SysAuthPermissionService;
 import com.yyj.codefarmcommunity.service.SysAuthRolePermissionService;
-import com.yyj.codefarmcommunity.service.SysAuthRoleService;
 import com.yyj.codefarmcommunity.mapper.SysAuthRolePermissionMapper;
+import com.yyj.codefarmcommunity.mapper.SysAuthRoleMapper;
+import com.yyj.codefarmcommunity.mapper.SysAuthPermissionMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.yyj.codefarmcommunity.utils.SecurityUtil;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.context.annotation.Lazy;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -29,17 +26,18 @@ import java.util.List;
 * @createDate 2026-03-18 09:07:51
 */
 @Service
-public class SysAuthRolePermissionServiceImpl extends ServiceImpl<SysAuthRolePermissionMapper, SysAuthRolePermission>
-    implements SysAuthRolePermissionService{
+public class SysAuthRolePermissionServiceImpl implements SysAuthRolePermissionService{
 
     private final Logger logger = LoggerFactory.getLogger(SysAuthRolePermissionServiceImpl.class);
 
-    private final SysAuthRoleService sysAuthRoleService;
-    private final SysAuthPermissionService sysAuthPermissionService;
+    private final SysAuthRolePermissionMapper sysAuthRolePermissionMapper;
+    private final SysAuthRoleMapper sysAuthRoleMapper;
+    private final SysAuthPermissionMapper sysAuthPermissionMapper;
 
-    public SysAuthRolePermissionServiceImpl(@Lazy SysAuthRoleService sysAuthRoleService, SysAuthPermissionService sysAuthPermissionService) {
-        this.sysAuthRoleService = sysAuthRoleService;
-        this.sysAuthPermissionService = sysAuthPermissionService;
+    public SysAuthRolePermissionServiceImpl(SysAuthRolePermissionMapper sysAuthRolePermissionMapper, SysAuthRoleMapper sysAuthRoleMapper, SysAuthPermissionMapper sysAuthPermissionMapper) {
+        this.sysAuthRolePermissionMapper = sysAuthRolePermissionMapper;
+        this.sysAuthRoleMapper = sysAuthRoleMapper;
+        this.sysAuthPermissionMapper = sysAuthPermissionMapper;
     }
 
     @Override
@@ -53,23 +51,19 @@ public class SysAuthRolePermissionServiceImpl extends ServiceImpl<SysAuthRolePer
         logger.info("根据角色ID获取角色权限详情，角色ID：{}", roleId);
 
         // 查询角色信息
-        SysAuthRole role = sysAuthRoleService.getRoleById(roleId);
+        SysAuthRole role = sysAuthRoleMapper.selectById(roleId);
         if (role == null) {
             logger.warn("角色不存在或已删除，角色ID：{}", roleId);
             throw new BusinessException(404, "角色不存在或已删除");
         }
 
         // 查询角色关联的权限
-        List<SysAuthRolePermission> rolePermissions = this.list(
-            new QueryWrapper<SysAuthRolePermission>()
-                .eq("role_id", roleId)
-                .eq("is_deleted", 0)
-        );
+        List<SysAuthRolePermission> rolePermissions = sysAuthRolePermissionMapper.selectByRoleId(roleId);
 
         // 查询权限详情
         List<SysAuthPermission> permissions = new ArrayList<>();
         for (SysAuthRolePermission rolePermission : rolePermissions) {
-            SysAuthPermission permission = sysAuthPermissionService.getPermissionById(rolePermission.getPermissionId());
+            SysAuthPermission permission = sysAuthPermissionMapper.selectById(rolePermission.getPermissionId());
             if (permission != null) {
                 permissions.add(permission);
             }
@@ -106,7 +100,7 @@ public class SysAuthRolePermissionServiceImpl extends ServiceImpl<SysAuthRolePer
         logger.info("分页查询角色权限列表，页码：{}，每页大小：{}", page, size);
 
         // 查询所有角色
-        List<SysAuthRole> roles = sysAuthRoleService.getAllRoles();
+        List<SysAuthRole> roles = sysAuthRoleMapper.selectAll();
 
         // 构建角色权限列表
         List<RoleWithPermission> roleWithPermissions = new ArrayList<>();
@@ -140,17 +134,8 @@ public class SysAuthRolePermissionServiceImpl extends ServiceImpl<SysAuthRolePer
         // 记录日志
         logger.info("条件查询角色权限列表，页码：{}，每页大小：{}，角色名称：{}，角色键：{}，权限名称：{}", page, size, roleName, roleKey, permissionName);
 
-        // 构建查询条件
-        QueryWrapper<SysAuthRole> queryWrapper = new QueryWrapper<>();
-        if (roleName != null && !roleName.isEmpty()) {
-            queryWrapper.like("role_name", roleName);
-        }
-        if (roleKey != null && !roleKey.isEmpty()) {
-            queryWrapper.like("role_key", roleKey);
-        }
-
         // 查询符合条件的角色
-        List<SysAuthRole> roles = sysAuthRoleService.getRolesByCondition(queryWrapper);
+        List<SysAuthRole> roles = sysAuthRoleMapper.selectByCondition(roleName, null);
 
         // 构建角色权限列表
         List<RoleWithPermission> roleWithPermissions = new ArrayList<>();
@@ -200,7 +185,7 @@ public class SysAuthRolePermissionServiceImpl extends ServiceImpl<SysAuthRolePer
         logger.info("保存角色权限关联，角色ID：{}", roleWithPermission.getId());
 
         // 检查角色是否存在
-        SysAuthRole role = sysAuthRoleService.getRoleById(roleWithPermission.getId());
+        SysAuthRole role = sysAuthRoleMapper.selectById(roleWithPermission.getId());
         if (role == null) {
             logger.warn("角色不存在或已删除，角色ID：{}", roleWithPermission.getId());
             throw new BusinessException(404, "角色不存在或已删除");
@@ -213,7 +198,7 @@ public class SysAuthRolePermissionServiceImpl extends ServiceImpl<SysAuthRolePer
                     logger.warn("权限ID不能为空");
                     throw new BusinessException(400, "权限ID不能为空");
                 }
-                SysAuthPermission existingPermission = sysAuthPermissionService.getPermissionById(permission.getId());
+                SysAuthPermission existingPermission = sysAuthPermissionMapper.selectById(permission.getId());
                 if (existingPermission == null) {
                     logger.warn("权限不存在或已删除，权限ID：{}", permission.getId());
                     throw new BusinessException(404, "权限不存在或已删除，权限ID：" + permission.getId());
@@ -222,25 +207,19 @@ public class SysAuthRolePermissionServiceImpl extends ServiceImpl<SysAuthRolePer
         }
 
         // 删除已有的角色权限关联
-        this.remove(
-            new QueryWrapper<SysAuthRolePermission>()
-                .eq("role_id", roleWithPermission.getId())
-        );
+        sysAuthRolePermissionMapper.deleteByRoleId(roleWithPermission.getId());
 
         // 保存新的角色权限关联
         if (roleWithPermission.getPermissions() != null && !roleWithPermission.getPermissions().isEmpty()) {
-            List<SysAuthRolePermission> rolePermissions = new ArrayList<>();
+            String currentUserName = SecurityUtil.getCurrentUserName();
             for (SysAuthPermission permission : roleWithPermission.getPermissions()) {
                 SysAuthRolePermission rolePermission = new SysAuthRolePermission();
                 rolePermission.setRoleId(roleWithPermission.getId());
                 rolePermission.setPermissionId(permission.getId());
                 rolePermission.setIsDeleted(0);
-                rolePermissions.add(rolePermission);
-            }
-            boolean success = this.saveBatch(rolePermissions);
-            if (!success) {
-                logger.error("保存角色权限关联失败，角色ID：{}", roleWithPermission.getId());
-                throw new BusinessException(500, "保存角色权限关联失败");
+                rolePermission.setCreatedBy(currentUserName);
+                rolePermission.setUpdateBy(currentUserName);
+                sysAuthRolePermissionMapper.insert(rolePermission);
             }
         }
 
@@ -263,7 +242,7 @@ public class SysAuthRolePermissionServiceImpl extends ServiceImpl<SysAuthRolePer
         logger.info("更新角色权限关联，角色ID：{}", roleWithPermission.getId());
 
         // 检查角色是否存在
-        SysAuthRole role = sysAuthRoleService.getRoleById(roleWithPermission.getId());
+        SysAuthRole role = sysAuthRoleMapper.selectById(roleWithPermission.getId());
         if (role == null) {
             logger.warn("角色不存在或已删除，角色ID：{}", roleWithPermission.getId());
             throw new BusinessException(404, "角色不存在或已删除");
@@ -276,7 +255,7 @@ public class SysAuthRolePermissionServiceImpl extends ServiceImpl<SysAuthRolePer
                     logger.warn("权限ID不能为空");
                     throw new BusinessException(400, "权限ID不能为空");
                 }
-                SysAuthPermission existingPermission = sysAuthPermissionService.getPermissionById(permission.getId());
+                SysAuthPermission existingPermission = sysAuthPermissionMapper.selectById(permission.getId());
                 if (existingPermission == null) {
                     logger.warn("权限不存在或已删除，权限ID：{}", permission.getId());
                     throw new BusinessException(404, "权限不存在或已删除，权限ID：" + permission.getId());
@@ -285,25 +264,19 @@ public class SysAuthRolePermissionServiceImpl extends ServiceImpl<SysAuthRolePer
         }
 
         // 删除已有的角色权限关联
-        this.remove(
-            new QueryWrapper<SysAuthRolePermission>()
-                .eq("role_id", roleWithPermission.getId())
-        );
+        sysAuthRolePermissionMapper.deleteByRoleId(roleWithPermission.getId());
 
         // 保存新的角色权限关联
         if (roleWithPermission.getPermissions() != null && !roleWithPermission.getPermissions().isEmpty()) {
-            List<SysAuthRolePermission> rolePermissions = new ArrayList<>();
+            String currentUserName = SecurityUtil.getCurrentUserName();
             for (SysAuthPermission permission : roleWithPermission.getPermissions()) {
                 SysAuthRolePermission rolePermission = new SysAuthRolePermission();
                 rolePermission.setRoleId(roleWithPermission.getId());
                 rolePermission.setPermissionId(permission.getId());
                 rolePermission.setIsDeleted(0);
-                rolePermissions.add(rolePermission);
-            }
-            boolean success = this.saveBatch(rolePermissions);
-            if (!success) {
-                logger.error("更新角色权限关联失败，角色ID：{}", roleWithPermission.getId());
-                throw new BusinessException(500, "更新角色权限关联失败");
+                rolePermission.setCreatedBy(currentUserName);
+                rolePermission.setUpdateBy(currentUserName);
+                sysAuthRolePermissionMapper.insert(rolePermission);
             }
         }
 
@@ -323,26 +296,23 @@ public class SysAuthRolePermissionServiceImpl extends ServiceImpl<SysAuthRolePer
         logger.info("删除角色权限关联，角色ID：{}", roleId);
 
         // 检查角色是否存在
-        SysAuthRole role = sysAuthRoleService.getRoleById(roleId);
+        SysAuthRole role = sysAuthRoleMapper.selectById(roleId);
         if (role == null) {
             logger.warn("角色不存在或已删除，角色ID：{}", roleId);
             throw new BusinessException(404, "角色不存在或已删除");
         }
 
         // 删除角色权限关联
-        boolean success = this.remove(
-            new QueryWrapper<SysAuthRolePermission>()
-                .eq("role_id", roleId)
-        );
+        int success = sysAuthRolePermissionMapper.deleteByRoleId(roleId);
 
-        if (success) {
+        if (success > 0) {
             logger.info("删除角色权限关联成功，角色ID：{}", roleId);
         } else {
             logger.error("删除角色权限关联失败，角色ID：{}", roleId);
             throw new BusinessException(500, "删除角色权限关联失败");
         }
 
-        return success;
+        return success > 0;
     }
 
     @Override
@@ -361,7 +331,7 @@ public class SysAuthRolePermissionServiceImpl extends ServiceImpl<SysAuthRolePer
             if (roleId == null || roleId <= 0) {
                 throw new BusinessException(400, "角色ID不能为空且必须大于0");
             }
-            SysAuthRole role = sysAuthRoleService.getRoleById(roleId);
+            SysAuthRole role = sysAuthRoleMapper.selectById(roleId);
             if (role == null) {
                 logger.warn("角色不存在或已删除，角色ID：{}", roleId);
                 throw new BusinessException(404, "角色不存在或已删除，角色ID：" + roleId);
@@ -369,19 +339,16 @@ public class SysAuthRolePermissionServiceImpl extends ServiceImpl<SysAuthRolePer
         }
 
         // 批量删除角色权限关联
-        boolean success = this.remove(
-            new QueryWrapper<SysAuthRolePermission>()
-                .in("role_id", roleIds)
-        );
-
-        if (success) {
-            logger.info("批量删除角色权限关联成功，角色ID列表：{}", roleIds);
-        } else {
-            logger.error("批量删除角色权限关联失败，角色ID列表：{}", roleIds);
-            throw new BusinessException(500, "批量删除角色权限关联失败");
+        for (Long roleId : roleIds) {
+            int success = sysAuthRolePermissionMapper.deleteByRoleId(roleId);
+            if (success == 0) {
+                logger.error("批量删除角色权限关联失败，角色ID：{}", roleId);
+                throw new BusinessException(500, "批量删除角色权限关联失败");
+            }
         }
 
-        return success;
+        logger.info("批量删除角色权限关联成功，角色ID列表：{}", roleIds);
+        return true;
     }
 }
 

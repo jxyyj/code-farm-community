@@ -22,8 +22,8 @@
           <el-table-column type="selection" width="50" />
           <el-table-column prop="id" label="ID" width="80" />
           <el-table-column prop="roleName" label="角色名称" />
-          <el-table-column prop="description" label="描述" />
-          <el-table-column label="操作" width="250" fixed="right">
+          <el-table-column prop="roleKey" label="角色键" />
+          <el-table-column label="操作" width="300" fixed="right">
             <template #default="scope">
               <el-button type="primary" size="small" @click="handleEditRole(scope.row)">
                 编辑
@@ -33,6 +33,9 @@
               </el-button>
               <el-button size="small" @click="handleAssignPermissions(scope.row)">
                 分配权限
+              </el-button>
+              <el-button size="small" @click="handleRecycleRole(scope.row.id)">
+                回收
               </el-button>
             </template>
           </el-table-column>
@@ -63,8 +66,8 @@
         <el-form-item label="角色名称" prop="roleName">
           <el-input v-model="roleForm.roleName" placeholder="请输入角色名称" />
         </el-form-item>
-        <el-form-item label="描述" prop="description">
-          <el-input v-model="roleForm.description" type="textarea" placeholder="请输入角色描述" />
+        <el-form-item label="角色键" prop="roleKey">
+          <el-input v-model="roleForm.roleKey" placeholder="请输入角色键" />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -126,15 +129,15 @@ const roleFormRef = ref(null)
 const roleForm = reactive({
   id: '',
   roleName: '',
-  description: ''
+  roleKey: ''
 })
 
 const roleRules = {
   roleName: [
     { required: true, message: '请输入角色名称', trigger: 'blur' }
   ],
-  description: [
-    { required: true, message: '请输入角色描述', trigger: 'blur' }
+  roleKey: [
+    { required: true, message: '请输入角色键', trigger: 'blur' }
   ]
 }
 
@@ -215,7 +218,7 @@ const handleAddRole = () => {
   Object.assign(roleForm, {
     id: '',
     roleName: '',
-    description: ''
+    roleKey: ''
   })
   roleDialogVisible.value = true
 }
@@ -267,6 +270,21 @@ const handleDeleteRole = async (id) => {
     }
   } catch (error) {
     ElMessage.error('删除失败')
+  }
+}
+
+// 回收角色
+const handleRecycleRole = async (id) => {
+  try {
+    const response = await roleApi.recycleRole(id)
+    if (response.code === 200) {
+      ElMessage.success('回收成功')
+      getRoles()
+    } else {
+      ElMessage.error(response.message || '回收失败')
+    }
+  } catch (error) {
+    ElMessage.error('回收失败')
   }
 }
 

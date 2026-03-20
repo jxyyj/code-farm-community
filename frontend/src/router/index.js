@@ -43,6 +43,11 @@ const routes = [
         path: 'permissions',
         name: 'PermissionManagement',
         component: () => import('../views/admin/PermissionManagement.vue')
+      },
+      {
+        path: 'profile',
+        name: 'Profile',
+        component: () => import('../views/Profile.vue')
       }
     ]
   }

@@ -1,8 +1,6 @@
 package com.yyj.codefarmcommunity.service;
 
 import com.yyj.codefarmcommunity.entity.SysAuthRole;
-import com.baomidou.mybatisplus.extension.service.IService;
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 
 import java.util.List;
 import java.util.Map;
@@ -12,10 +10,10 @@ import java.util.Map;
 * @description 针对表【sys_auth_role(角色表)】的数据库操作Service
 * @createDate 2026-03-18 09:07:51
 */
-public interface SysAuthRoleService extends IService<SysAuthRole> {
+public interface SysAuthRoleService {
 
     /**
-     * 根据用户ID获取角色
+     * 根据用户ID查询角色
      * @param userId 用户ID
      * @return 角色列表
      */
@@ -36,33 +34,35 @@ public interface SysAuthRoleService extends IService<SysAuthRole> {
 
     /**
      * 条件查询角色
-     * @param queryWrapper 查询条件
+     * @param roleName 角色名称
+     * @param status 状态
      * @return 角色列表
      */
-    List<SysAuthRole> getRolesByCondition(QueryWrapper<SysAuthRole> queryWrapper);
+    List<SysAuthRole> getRolesByCondition(String roleName, Integer status);
 
     /**
-     * 查询角色的所有权限
+     * 根据角色ID查询权限
      * @param roleId 角色ID
      * @return 权限列表
      */
     List<String> getPermissionsByRoleId(Long roleId);
 
     /**
-     * 查询所有角色的所有权限
+     * 查询所有角色及其权限
      * @return 角色权限映射
      */
     Map<String, List<String>> getAllRolesWithPermissions();
 
     /**
-     * 条件查询所有角色的所有权限
-     * @param queryWrapper 查询条件
+     * 条件查询角色及其权限
+     * @param roleName 角色名称
+     * @param status 状态
      * @return 角色权限映射
      */
-    Map<String, List<String>> getRolesWithPermissionsByCondition(QueryWrapper<SysAuthRole> queryWrapper);
+    Map<String, List<String>> getRolesWithPermissionsByCondition(String roleName, Integer status);
 
     /**
-     * 为角色授权
+     * 为角色授予权限
      * @param roleId 角色ID
      * @param permissionIds 权限ID列表
      * @return 操作结果
@@ -97,6 +97,20 @@ public interface SysAuthRoleService extends IService<SysAuthRole> {
      */
     long countRoles();
 
-}
+    /**
+     * 保存角色
+     * @param role 角色信息
+     * @return 操作结果
+     */
+    boolean save(SysAuthRole role);
+
+    /**
+     * 更新角色
+     * @param role 角色信息
+     * @return 操作结果
+     */
+    boolean updateById(SysAuthRole role);
+
+}  
 
 

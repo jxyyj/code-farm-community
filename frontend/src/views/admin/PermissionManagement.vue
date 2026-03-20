@@ -64,9 +64,7 @@
         <el-form-item label="权限代码" prop="permissionKey">
           <el-input v-model="permissionForm.permissionKey" placeholder="请输入权限代码" />
         </el-form-item>
-        <el-form-item label="描述" prop="description">
-          <el-input v-model="permissionForm.description" type="textarea" placeholder="请输入权限描述" />
-        </el-form-item>
+
       </el-form>
       <template #footer>
         <span class="dialog-footer">
@@ -101,8 +99,7 @@ const permissionFormRef = ref(null)
 const permissionForm = reactive({
   id: '',
   name: '',
-  permissionKey: '',
-  description: ''
+  permissionKey: ''
 })
 
 const permissionRules = {
@@ -111,9 +108,6 @@ const permissionRules = {
   ],
   permissionKey: [
     { required: true, message: '请输入权限代码', trigger: 'blur' }
-  ],
-  description: [
-    { required: true, message: '请输入权限描述', trigger: 'blur' }
   ]
 }
 
@@ -187,9 +181,8 @@ const handleAddPermission = () => {
   permissionDialogTitle.value = '新增权限'
   Object.assign(permissionForm, {
     id: '',
-    permissionName: '',
-    permissionCode: '',
-    description: ''
+    name: '',
+    permissionKey: ''
   })
   permissionDialogVisible.value = true
 }

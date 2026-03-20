@@ -77,7 +77,10 @@ export const roleApi = {
   getRolePermissions: (roleId) => apiClient.get(`/role/${roleId}/permissions`),
   
   // 统计角色总数
-  countRoles: () => apiClient.get('/role/count')
+  countRoles: () => apiClient.get('/role/count'),
+  
+  // 回收角色
+  recycleRole: (id) => apiClient.post(`/role/recycle/${id}`)
 }
 
 // 权限管理API

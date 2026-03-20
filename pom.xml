@@ -44,8 +44,6 @@
         <spring-boot-aop.version>3.5.11</spring-boot-aop.version>
         <!-- SpringDoc 版本 -->
         <springdoc.version>3.0.2</springdoc.version>
-        <!-- Knife4j 版本 -->
-        <knife4j.version>4.5.0</knife4j.version>
     </properties>
     <dependencyManagement>
         <dependencies>

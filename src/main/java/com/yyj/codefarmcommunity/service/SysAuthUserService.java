@@ -1,9 +1,7 @@
 package com.yyj.codefarmcommunity.service;
 
 import com.yyj.codefarmcommunity.entity.SysAuthUser;
-import com.baomidou.mybatisplus.extension.service.IService;
 import com.yyj.codefarmcommunity.vo.RegisterRequest;
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 
 import java.util.List;
@@ -13,7 +11,7 @@ import java.util.List;
 * @description 针对表【sys_auth_user(用户信息表)】的数据库操作Service
 * @createDate 2026-03-18 09:07:51
 */
-public interface SysAuthUserService extends IService<SysAuthUser> {
+public interface SysAuthUserService {
 
     /**
      * 用户注册
@@ -37,10 +35,11 @@ public interface SysAuthUserService extends IService<SysAuthUser> {
 
     /**
      * 条件查询用户
-     * @param queryWrapper 查询条件
+     * @param userName 用户名
+     * @param status 状态
      * @return 用户列表
      */
-    List<SysAuthUser> getUsersByCondition(QueryWrapper<SysAuthUser> queryWrapper);
+    List<SysAuthUser> getUsersByCondition(String userName, Integer status);
 
     /**
      * 分页查询用户
@@ -111,6 +110,20 @@ public interface SysAuthUserService extends IService<SysAuthUser> {
      * @return 操作结果
      */
     boolean changePassword(Long userId, String oldPassword, String newPassword);
+
+    /**
+     * 根据用户名查询用户
+     * @param userName 用户名
+     * @return 用户信息
+     */
+    SysAuthUser getUserByUserName(String userName);
+
+    /**
+     * 保存用户
+     * @param user 用户信息
+     * @return 操作结果
+     */
+    boolean save(SysAuthUser user);
 
 }
 

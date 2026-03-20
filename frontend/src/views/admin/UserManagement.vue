@@ -16,8 +16,8 @@
         <el-input v-model="searchForm.userName" placeholder="用户名" prefix-icon="Search" style="width: 200px; margin-right: 10px" />
         <el-select v-model="searchForm.status" placeholder="状态" style="width: 120px; margin-right: 10px">
           <el-option label="全部" value="" />
-          <el-option label="启用" value="1" />
-          <el-option label="禁用" value="0" />
+          <el-option label="启用" value="0" />
+          <el-option label="禁用" value="1" />
         </el-select>
         <el-button type="primary" @click="handleSearch">
           <el-icon><Search /></el-icon>
@@ -37,9 +37,10 @@
           @selection-change="handleSelectionChange"
         >
           <el-table-column type="selection" width="50" />
-          <el-table-column prop="id" label="ID" width="80" />
-          <el-table-column prop="userName" label="用户名" />
-          <el-table-column prop="email" label="邮箱" />
+          <el-table-column prop="id" label="ID" width="60" />
+          <el-table-column prop="userName" label="用户名" width="100" />
+          <el-table-column prop="nickName" label="昵称" width="100" />
+          <el-table-column prop="email" label="邮箱" min-width="200" />
           <el-table-column prop="status" label="状态" width="100">
             <template #default="scope">
               <el-tag :type="scope.row.status === 0 ? 'success' : 'danger'">
@@ -85,7 +86,10 @@
     >
       <el-form :model="userForm" :rules="userRules" ref="userFormRef" label-width="80px">
         <el-form-item label="用户名" prop="userName">
-          <el-input v-model="userForm.userName" placeholder="请输入用户名" />
+          <el-input v-model="userForm.userName" placeholder="请输入用户名" :disabled="!!userForm.id" />
+        </el-form-item>
+        <el-form-item label="昵称" prop="nickName">
+          <el-input v-model="userForm.nickName" placeholder="请输入昵称" />
         </el-form-item>
         <el-form-item label="密码" prop="password" v-if="!userForm.id">
           <el-input v-model="userForm.password" type="password" placeholder="请输入密码" show-password />
@@ -162,6 +166,7 @@ const userFormRef = ref(null)
 const userForm = reactive({
   id: '',
   userName: '',
+  nickName: '',
   password: '',
   email: '',
   status: 1
@@ -170,6 +175,9 @@ const userForm = reactive({
 const userRules = {
   userName: [
     { required: true, message: '请输入用户名', trigger: 'blur' }
+  ],
+  nickName: [
+    { required: true, message: '请输入昵称', trigger: 'blur' }
   ],
   password: [
     { required: true, message: '请输入密码', trigger: 'blur' },
@@ -242,6 +250,7 @@ const handleAddUser = () => {
   Object.assign(userForm, {
     id: '',
     userName: '',
+    nickName: '',
     password: '',
     email: '',
     status: 1

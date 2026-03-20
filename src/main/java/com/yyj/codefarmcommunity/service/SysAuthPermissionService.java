@@ -1,9 +1,7 @@
 package com.yyj.codefarmcommunity.service;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.baomidou.mybatisplus.extension.service.IService;
 import com.yyj.codefarmcommunity.entity.SysAuthPermission;
+import com.baomidou.mybatisplus.core.metadata.IPage;
 
 import java.util.List;
 
@@ -12,10 +10,10 @@ import java.util.List;
 * @description 针对表【sys_auth_permission(权限表)】的数据库操作Service
 * @createDate 2026-03-18 09:07:51
 */
-public interface SysAuthPermissionService extends IService<SysAuthPermission> {
+public interface SysAuthPermissionService {
 
     /**
-     * 根据用户ID获取权限
+     * 根据用户ID查询权限
      * @param userId 用户ID
      * @return 权限列表
      */
@@ -36,25 +34,28 @@ public interface SysAuthPermissionService extends IService<SysAuthPermission> {
 
     /**
      * 条件查询权限
-     * @param queryWrapper 查询条件
+     * @param name 权限名称
+     * @param type 权限类型
+     * @param status 状态
+     * @param parentId 父权限ID
      * @return 权限列表
      */
-    List<SysAuthPermission> getPermissionsByCondition(QueryWrapper<SysAuthPermission> queryWrapper);
+    List<SysAuthPermission> getPermissionsByCondition(String name, Integer type, Integer status, Long parentId);
 
     /**
-     * 分页条件查询权限
+     * 条件分页查询权限
      * @param page 页码
      * @param size 每页大小
      * @param name 权限名称
      * @param type 权限类型
      * @param status 状态
-     * @param parentId 父菜单ID
+     * @param parentId 父权限ID
      * @return 分页结果
      */
     IPage<SysAuthPermission> searchPermissions(Integer page, Integer size, String name, Integer type, Integer status, Long parentId);
 
     /**
-     * 分页查询权限列表
+     * 分页查询权限
      * @param page 页码
      * @param size 每页大小
      * @return 分页结果
@@ -62,7 +63,7 @@ public interface SysAuthPermissionService extends IService<SysAuthPermission> {
     IPage<SysAuthPermission> listPermissions(Integer page, Integer size);
 
     /**
-     * 根据ID查询权限
+     * 根据ID查询权限（带校验）
      * @param id 权限ID
      * @return 权限信息
      */

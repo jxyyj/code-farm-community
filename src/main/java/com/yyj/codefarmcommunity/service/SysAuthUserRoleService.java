@@ -1,8 +1,6 @@
 package com.yyj.codefarmcommunity.service;
 
 import com.yyj.codefarmcommunity.entity.SysAuthUserRole;
-import com.baomidou.mybatisplus.extension.service.IService;
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 
 import java.util.List;
 
@@ -11,17 +9,17 @@ import java.util.List;
 * @description 针对表【sys_auth_user_role(用户角色表)】的数据库操作Service
 * @createDate 2026-03-18 09:07:51
 */
-public interface SysAuthUserRoleService extends IService<SysAuthUserRole> {
+public interface SysAuthUserRoleService {
 
     /**
-     * 根据用户ID获取用户角色关联
+     * 根据用户ID查询用户角色关联
      * @param userId 用户ID
      * @return 用户角色关联列表
      */
     List<SysAuthUserRole> getUserRolesByUserId(Long userId);
 
     /**
-     * 根据角色ID获取用户角色关联
+     * 根据角色ID查询用户角色关联
      * @param roleId 角色ID
      * @return 用户角色关联列表
      */
@@ -29,10 +27,11 @@ public interface SysAuthUserRoleService extends IService<SysAuthUserRole> {
 
     /**
      * 条件查询用户角色关联
-     * @param queryWrapper 查询条件
+     * @param userId 用户ID
+     * @param roleId 角色ID
      * @return 用户角色关联列表
      */
-    List<SysAuthUserRole> getUserRolesByCondition(QueryWrapper<SysAuthUserRole> queryWrapper);
+    List<SysAuthUserRole> getUserRolesByCondition(Long userId, Long roleId);
 
     /**
      * 保存用户角色关联

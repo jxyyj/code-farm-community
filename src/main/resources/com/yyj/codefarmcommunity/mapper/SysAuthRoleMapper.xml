@@ -19,4 +19,60 @@
         id,role_name,role_key,created_by,created_time,update_by,
         update_time,is_deleted
     </sql>
+
+    <insert id="insert" parameterType="com.yyj.codefarmcommunity.entity.SysAuthRole">
+        INSERT INTO sys_auth_role (role_name, role_key, is_deleted, created_time, update_time)
+        VALUES (#{roleName}, #{roleKey}, #{isDeleted}, NOW(), NOW())
+    </insert>
+
+    <update id="updateById" parameterType="com.yyj.codefarmcommunity.entity.SysAuthRole">
+        UPDATE sys_auth_role
+        SET role_name = #{roleName},
+            role_key = #{roleKey},
+            is_deleted = #{isDeleted},
+            update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List" />
+        FROM sys_auth_role
+        WHERE id = #{id} AND is_deleted = 0
+    </select>
+
+    <select id="selectByRoleKey" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List" />
+        FROM sys_auth_role
+        WHERE role_key = #{roleKey} AND is_deleted = 0
+    </select>
+
+    <select id="selectAll" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List" />
+        FROM sys_auth_role
+        WHERE is_deleted = 0
+        ORDER BY id DESC
+    </select>
+
+    <select id="selectByCondition" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List" />
+        FROM sys_auth_role
+        WHERE is_deleted = 0
+        <if test="roleName != null and roleName != ''">
+            AND role_name LIKE CONCAT('%', #{roleName}, '%')
+        </if>
+        <if test="status != null">
+            AND status = #{status}
+        </if>
+        ORDER BY id DESC
+    </select>
+
+    <select id="count" resultType="long">
+        SELECT COUNT(*)
+        FROM sys_auth_role
+        WHERE is_deleted = 0
+    </select>
 </mapper>

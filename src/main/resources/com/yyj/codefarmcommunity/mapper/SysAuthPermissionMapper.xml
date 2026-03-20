@@ -24,8 +24,126 @@
     </resultMap>
 
     <sql id="Base_Column_List">
-        id,name,parent_id,order_num,type,menu_url,
-        component,status,show,icon,permission_key,
+        id,`name`,parent_id,order_num,`type`,menu_url,
+        component,`status`,`show`,icon,permission_key,
         created_by,created_time,update_by,update_time,is_deleted
     </sql>
+
+    <insert id="insert" parameterType="com.yyj.codefarmcommunity.entity.SysAuthPermission">
+        INSERT INTO sys_auth_permission (name, parent_id, order_num, type, menu_url, component, status, show, icon, permission_key, is_deleted, created_time, update_time)
+        VALUES (#{name}, #{parentId}, #{orderNum}, #{type}, #{menuUrl}, #{component}, #{status}, #{show}, #{icon}, #{permissionKey}, #{isDeleted}, NOW(), NOW())
+    </insert>
+
+    <update id="updateById" parameterType="com.yyj.codefarmcommunity.entity.SysAuthPermission">
+        UPDATE sys_auth_permission
+        SET name = #{name},
+            parent_id = #{parentId},
+            order_num = #{orderNum},
+            type = #{type},
+            menu_url = #{menuUrl},
+            component = #{component},
+            status = #{status},
+            show = #{show},
+            icon = #{icon},
+            permission_key = #{permissionKey},
+            is_deleted = #{isDeleted},
+            update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List" />
+        FROM sys_auth_permission
+        WHERE id = #{id} AND is_deleted = 0
+    </select>
+
+    <select id="selectByPermissionKey" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List" />
+        FROM sys_auth_permission
+        WHERE permission_key = #{permissionKey} AND is_deleted = 0
+    </select>
+
+    <select id="selectAll" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List" />
+        FROM sys_auth_permission
+        WHERE is_deleted = 0
+        ORDER BY permission_key ASC
+    </select>
+
+    <select id="selectByCondition" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List" />
+        FROM sys_auth_permission
+        WHERE is_deleted = 0
+        <if test="name != null and name != ''">
+            AND name LIKE CONCAT('%', #{name}, '%')
+        </if>
+        <if test="type != null">
+            AND type = #{type}
+        </if>
+        <if test="status != null">
+            AND status = #{status}
+        </if>
+        <if test="parentId != null">
+            AND parent_id = #{parentId}
+        </if>
+        ORDER BY permission_key ASC
+    </select>
+
+    <select id="selectPage" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List" />
+        FROM sys_auth_permission
+        WHERE is_deleted = 0
+        ORDER BY permission_key ASC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <select id="searchPage" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List" />
+        FROM sys_auth_permission
+        WHERE is_deleted = 0
+        <if test="name != null and name != ''">
+            AND name LIKE CONCAT('%', #{name}, '%')
+        </if>
+        <if test="type != null">
+            AND type = #{type}
+        </if>
+        <if test="status != null">
+            AND status = #{status}
+        </if>
+        <if test="parentId != null">
+            AND parent_id = #{parentId}
+        </if>
+        ORDER BY permission_key ASC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <select id="count" resultType="long">
+        SELECT COUNT(*)
+        FROM sys_auth_permission
+        WHERE is_deleted = 0
+    </select>
+
+    <select id="countByCondition" resultType="long">
+        SELECT COUNT(*)
+        FROM sys_auth_permission
+        WHERE is_deleted = 0
+        <if test="name != null and name != ''">
+            AND name LIKE CONCAT('%', #{name}, '%')
+        </if>
+        <if test="type != null">
+            AND type = #{type}
+        </if>
+        <if test="status != null">
+            AND status = #{status}
+        </if>
+        <if test="parentId != null">
+            AND parent_id = #{parentId}
+        </if>
+    </select>
 </mapper>
